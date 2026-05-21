@@ -2,8 +2,12 @@ package com.example.deviceinfoviewer.widget;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -68,14 +72,14 @@ public class MonitorChartView extends LinearLayout {
 
         LinearLayout headerRow = new LinearLayout(ctx);
         headerRow.setOrientation(LinearLayout.HORIZONTAL);
-        headerRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        headerRow.setGravity(Gravity.CENTER_VERTICAL);
         int px4 = dp(4, ctx);
         headerRow.setPadding(px4, px4, px4, dp(2, ctx));
 
         TextView title = new TextView(ctx);
         title.setId(View.generateViewId());
         title.setTextColor(0xFF757575);
-        title.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(0,
                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         title.setLayoutParams(titleLp);
@@ -84,7 +88,7 @@ public class MonitorChartView extends LinearLayout {
         current.setId(View.generateViewId());
         current.setTextColor(0xFF212121);
         current.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13);
-        current.setTypeface(null, android.graphics.Typeface.BOLD);
+        current.setTypeface(null, Typeface.BOLD);
         current.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -114,9 +118,9 @@ public class MonitorChartView extends LinearLayout {
     /** 找到当前值 TextView（它是 headerRow 的第二个子 View） */
     private TextView findCurrentValueView() {
         if (getChildCount() > 0) {
-            android.view.View header = getChildAt(0);
+            View header = getChildAt(0);
             if (header instanceof LinearLayout && ((LinearLayout) header).getChildCount() >= 2) {
-                android.view.View v = ((LinearLayout) header).getChildAt(1);
+                View v = ((LinearLayout) header).getChildAt(1);
                 if (v instanceof TextView) return (TextView) v;
             }
         }
