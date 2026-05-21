@@ -4,10 +4,9 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.WindowInsets;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -39,15 +38,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i("MainActivity", "onCreate start, SDK=" + Build.VERSION.SDK_INT);
 
         settings = AppSettings.getInstance(this);
         applyDarkMode();
+        Log.i("MainActivity", "step1: dark mode applied");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             getWindow().setDecorFitsSystemWindows(false);
         }
 
+        Log.i("MainActivity", "step2: inflating layout...");
         setContentView(R.layout.activity_main);
+        Log.i("MainActivity", "step3: layout inflated OK");
 
         // 工具栏
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -63,19 +66,26 @@ public class MainActivity extends AppCompatActivity {
 
         viewPager = findViewById(R.id.view_pager);
         tabLayout = findViewById(R.id.tab_layout);
+        Log.i("MainActivity", "step4: views found");
 
         // ViewPager2
         TabPagerAdapter adapter = new TabPagerAdapter(this);
+        Log.i("MainActivity", "step5: adapter created, setting...");
         viewPager.setAdapter(adapter);
+        Log.i("MainActivity", "step6: adapter set OK");
 
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             tab.setText(TabPagerAdapter.getTabTitle(position));
         }).attach();
+        Log.i("MainActivity", "step7: tabs attached");
 
         // 初始化 Repository
         repository = DeviceApplication.getDeviceRepository();
-        repository.startMonitoring(settings.getRefreshIntervalMs());
-        repository.loadStaticData();
+        if (repository != null) {
+            repository.startMonitoring(settings.getRefreshIntervalMs());
+            repository.loadStaticData();
+        }
+        Log.i("MainActivity", "step8: repository ready");
 
         // 权限引导
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -86,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onDenied() { }
             });
         }
+        Log.i("MainActivity", "step9: onCreate done");
     }
 
     public DeviceRepository getRepository() {
