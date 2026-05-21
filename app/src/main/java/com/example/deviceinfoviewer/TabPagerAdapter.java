@@ -5,11 +5,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
-import com.example.deviceinfoviewer.fragment.BatteryFragment;
-import com.example.deviceinfoviewer.fragment.CpuFragment;
-import com.example.deviceinfoviewer.fragment.GpuFragment;
-import com.example.deviceinfoviewer.fragment.MemoryFragment;
-import com.example.deviceinfoviewer.fragment.NetworkFragment;
+import com.example.deviceinfoviewer.fragment.SafePlaceholderFragment;
 
 /**
  * ViewPager2 的 FragmentStateAdapter — 竞品风格 Tab：CPU/GPU/内存/电池/网络
@@ -28,14 +24,7 @@ public class TabPagerAdapter extends FragmentStateAdapter {
     @NonNull
     @Override
     public Fragment createFragment(int position) {
-        switch (position) {
-            case 0: return new CpuFragment();
-            case 1: return new GpuFragment();
-            case 2: return new MemoryFragment();
-            case 3: return new BatteryFragment();
-            case 4: return new NetworkFragment();
-            default: return new CpuFragment();
-        }
+        return new SafePlaceholderFragment();
     }
 
     @Override

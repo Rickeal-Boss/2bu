@@ -9,15 +9,14 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/app_bar_bg"
+        android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
+        android:background="?attr/colorPrimary"
         app:elevation="0dp">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/app_bar_bg"
-            app:titleTextColor="@color/on_primary"
             app:popupTheme="@style/ThemeOverlay.Material3.Light"
             app:title="System Monitor" />
 
@@ -25,9 +24,8 @@
             android:id="@+id/tab_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/app_bar_bg"
+            android:background="?attr/colorPrimary"
             app:tabIndicatorColor="@android:color/white"
-            app:tabIndicatorHeight="3dp"
             app:tabSelectedTextColor="@android:color/white"
             app:tabTextColor="#B3FFFFFF"
             app:tabMode="fixed"
