@@ -153,7 +153,13 @@ public class FloatingWindowService extends Service {
             params.x = savedX;
             params.y = savedY;
         } else {
-            params.x = windowManager.getDefaultDisplay().getWidth() - 200;
+            int screenWidth;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                screenWidth = windowManager.getCurrentWindowMetrics().getBounds().width();
+            } else {
+                screenWidth = windowManager.getDefaultDisplay().getWidth();
+            }
+            params.x = screenWidth - 200;
             params.y = 100;
         }
 
@@ -277,9 +283,12 @@ public class FloatingWindowService extends Service {
 
     private void showForegroundNotification() {
         Intent notificationIntent = new Intent(this, MainActivity.class);
+        int pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            pendingFlags |= PendingIntent.FLAG_IMMUTABLE;
+        }
         PendingIntent pendingIntent = PendingIntent.getActivity(
-                this, 0, notificationIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                this, 0, notificationIntent, pendingFlags);
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("设备信息悬浮窗")
@@ -289,7 +298,13 @@ public class FloatingWindowService extends Service {
                 .setOngoing(true)
                 .build();
 
-        startForeground(NOTIFICATION_ID, notification);
+        // API 34+ 需指定 foregroundServiceType
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID, notification,
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
+        }
     }
 
     @Override

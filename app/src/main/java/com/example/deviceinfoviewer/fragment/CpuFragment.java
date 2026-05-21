@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,286 +30,225 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * CPU Fragment — 竞品风格：设备信息卡片 + 温度状态 + 图表 + Cluster/Per core 切换
+ * CPU Fragment — 设备信息卡片 + 温度状态 + 图表 + Cluster/Per core 核心状态
  */
 public class CpuFragment extends Fragment {
 
+    private static final String TAG = "CpuFragment";
     private DeviceRepository repo;
 
-    // 设备信息
     private TextView tvCpuModel, tvCpuSpec, tvTempStatus;
     private MonitorChartView chartCpuTemp;
-
-    // 切换按钮
     private TextView tabCluster, tabPerCore;
     private LinearLayout clusterView, perCoreView;
-    private boolean showPerCore = false;
-
     private Handler handler;
     private Runnable chartUpdater;
 
-    @Nullable
-    @Override
+    @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_cpu, container, false);
+        try {
+            return inflater.inflate(R.layout.fragment_cpu, container, false);
+        } catch (Exception e) {
+            Log.e(TAG, "onCreateView failed", e);
+            return new TextView(getContext());
+        }
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        try {
+            repo = DeviceApplication.getDeviceRepository();
 
-        repo = DeviceApplication.getDeviceRepository();
+            tvCpuModel = view.findViewById(R.id.tv_cpu_model);
+            tvCpuSpec = view.findViewById(R.id.tv_cpu_spec);
+            tvTempStatus = view.findViewById(R.id.tv_temp_status);
+            chartCpuTemp = view.findViewById(R.id.chart_cpu_temp);
+            tabCluster = view.findViewById(R.id.tab_cluster);
+            tabPerCore = view.findViewById(R.id.tab_per_core);
+            clusterView = view.findViewById(R.id.cluster_view);
+            perCoreView = view.findViewById(R.id.per_core_view);
 
-        tvCpuModel = view.findViewById(R.id.tv_cpu_model);
-        tvCpuSpec = view.findViewById(R.id.tv_cpu_spec);
-        tvTempStatus = view.findViewById(R.id.tv_temp_status);
-        chartCpuTemp = view.findViewById(R.id.chart_cpu_temp);
-        tabCluster = view.findViewById(R.id.tab_cluster);
-        tabPerCore = view.findViewById(R.id.tab_per_core);
-        clusterView = view.findViewById(R.id.cluster_view);
-        perCoreView = view.findViewById(R.id.per_core_view);
+            if (chartCpuTemp != null) {
+                chartCpuTemp.setTitle("CPU 温度");
+                chartCpuTemp.setValueFormat("%.1f", "°C");
+            }
 
-        // 配置温度图表
-        if (chartCpuTemp != null) {
-            chartCpuTemp.setTitle("CPU 温度");
-            chartCpuTemp.setChartColor(Color.parseColor("#4CAF50"));
-            chartCpuTemp.setValueFormat("%.1f", "°C");
+            if (tabCluster != null) tabCluster.setOnClickListener(v -> switchToCluster());
+            if (tabPerCore != null) tabPerCore.setOnClickListener(v -> switchToPerCore());
+
+            if (repo == null) return;
+
+            repo.getCpuLiveData().observe(getViewLifecycleOwner(), cpu -> {
+                if (cpu != null) {
+                    updateCpuInfo(cpu);
+                    updateTempStatus(cpu);
+                    updateCoreViews(cpu);
+                }
+            });
+
+            handler = new Handler(Looper.getMainLooper());
+            chartUpdater = () -> {
+                updateCharts();
+                if (handler != null) handler.postDelayed(chartUpdater, 2000);
+            };
+        } catch (Exception e) {
+            Log.e(TAG, "onViewCreated failed", e);
         }
-
-        // Cluster / Per core 切换
-        tabCluster.setOnClickListener(v -> switchToCluster());
-        tabPerCore.setOnClickListener(v -> switchToPerCore());
-
-        if (repo == null) return;
-
-        // 观察 CPU LiveData
-        repo.getCpuLiveData().observe(getViewLifecycleOwner(), cpu -> {
-            if (cpu == null) return;
-            updateCpuInfo(cpu);
-            updateTempStatus(cpu);
-            updateCoreViews(cpu);
-        });
-
-        // 图表定时更新
-        handler = new Handler(Looper.getMainLooper());
-        chartUpdater = () -> {
-            updateCharts();
-            handler.postDelayed(chartUpdater, 2000);
-        };
     }
 
-    @Override
-    public void onResume() {
+    @Override public void onResume() {
         super.onResume();
-        if (handler != null && chartUpdater != null) {
-            handler.post(chartUpdater);
-        }
+        if (handler != null && chartUpdater != null) handler.post(chartUpdater);
     }
 
-    @Override
-    public void onPause() {
+    @Override public void onPause() {
         super.onPause();
-        if (handler != null && chartUpdater != null) {
-            handler.removeCallbacks(chartUpdater);
+        if (handler != null && chartUpdater != null) handler.removeCallbacks(chartUpdater);
+    }
+
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
+            handler = null;
         }
     }
 
     private void updateCpuInfo(CpuInfo cpu) {
-        // 构建 CPU 型号信息
-        StringBuilder model = new StringBuilder();
         String arch = cpu.getArchitecture();
-        if (arch != null && !arch.isEmpty()) {
-            model.append(arch);
-        }
-        if (model.length() == 0) {
-            model.append("未知处理器");
-        }
-        tvCpuModel.setText(model.toString());
+        StringBuilder model = new StringBuilder();
+        if (arch != null && !arch.isEmpty()) model.append(arch);
+        if (model.length() == 0) model.append("未知处理器");
+        if (tvCpuModel != null) tvCpuModel.setText(model.toString());
 
-        // 规格信息：核心数 | 架构
         StringBuilder spec = new StringBuilder();
         spec.append(cpu.getCoreCount()).append(" 核心");
-        if (arch != null && !arch.isEmpty()) {
-            spec.append(" · ").append(arch);
-        }
-        tvCpuSpec.setText(spec.toString());
+        if (arch != null && !arch.isEmpty()) spec.append(" · ").append(arch);
+        if (tvCpuSpec != null) tvCpuSpec.setText(spec.toString());
     }
 
     private void updateTempStatus(CpuInfo cpu) {
+        if (tvTempStatus == null) return;
         float temp = cpu.getTemperatureCelsius();
-        String status;
-        int color;
         if (Float.isNaN(temp)) {
-            status = "未知";
-            color = Color.parseColor("#9E9E9E");
-        } else if (temp < 45) {
-            status = "正常";
-            color = Color.parseColor("#4CAF50");
-        } else if (temp < 60) {
-            status = "偏高";
-            color = Color.parseColor("#FF9800");
+            tvTempStatus.setText("未知");
+            tvTempStatus.setTextColor(Color.parseColor("#9E9E9E"));
         } else {
-            status = "过热";
-            color = Color.parseColor("#F44336");
+            tvTempStatus.setText(String.format("%.1f°C", temp));
+            if (temp < 45) tvTempStatus.setTextColor(Color.parseColor("#4CAF50"));
+            else if (temp < 60) tvTempStatus.setTextColor(Color.parseColor("#FF9800"));
+            else tvTempStatus.setTextColor(Color.parseColor("#F44336"));
         }
-        tvTempStatus.setText(status);
-        tvTempStatus.setTextColor(color);
     }
 
     private void updateCoreViews(CpuInfo cpu) {
         List<CpuCoreInfo> cores = cpu.getCores();
         if (cores == null || cores.isEmpty()) return;
-
         android.content.Context ctx = getContext();
         if (ctx == null) return;
 
-        // 按 cluster 分组（基于 maxFreqKHz）
         Map<Long, List<CpuCoreInfo>> clusters = groupByCluster(cores);
 
-        // 更新 Cluster 视图
-        clusterView.removeAllViews();
-        LayoutInflater inflater = LayoutInflater.from(ctx);
+        if (clusterView != null) {
+            clusterView.removeAllViews();
+            LayoutInflater inflater = LayoutInflater.from(ctx);
+            for (Map.Entry<Long, List<CpuCoreInfo>> e : clusters.entrySet()) {
+                List<CpuCoreInfo> clusterCores = e.getValue();
+                View item = inflater.inflate(R.layout.item_cpu_cluster, clusterView, false);
 
-        for (Map.Entry<Long, List<CpuCoreInfo>> entry : clusters.entrySet()) {
-            long maxFreq = entry.getKey();
-            List<CpuCoreInfo> clusterCores = entry.getValue();
+                TextView tvType = item.findViewById(R.id.tv_cluster_type);
+                TextView tvCores = item.findViewById(R.id.tv_cluster_cores);
+                TextView tvFreq = item.findViewById(R.id.tv_cluster_freq);
 
-            // 确定 cluster 类型
-            CpuCoreInfo firstCore = clusterCores.get(0);
-            long curFreq = getAvgFreq(clusterCores);
+                if (tvType != null) tvType.setText(getClusterType(e.getKey()));
+                if (tvCores != null) tvCores.setText(clusterCores.size() + " 核心 · 最高 " + FormatUtils.formatFreq(e.getKey()));
+                if (tvFreq != null) tvFreq.setText(FormatUtils.formatFreq(getAvgFreq(clusterCores)));
 
-            View clusterItem = inflater.inflate(R.layout.item_cpu_cluster, clusterView, false);
-
-            TextView tvClusterType = clusterItem.findViewById(R.id.tv_cluster_type);
-            TextView tvClusterCores = clusterItem.findViewById(R.id.tv_cluster_cores);
-            TextView tvClusterFreq = clusterItem.findViewById(R.id.tv_cluster_freq);
-            MonitorChartView miniChart = clusterItem.findViewById(R.id.chart_cluster_mini);
-
-            // 设置 cluster 类型标签
-            String type = getClusterType(firstCore, maxFreq);
-            tvClusterType.setText(type);
-            tvClusterCores.setText(clusterCores.size() + " 核心 @" + FormatUtils.formatFreq(maxFreq));
-            tvClusterFreq.setText(FormatUtils.formatFreq(curFreq));
-
-            clusterView.addView(clusterItem);
+                clusterView.addView(item);
+            }
         }
 
-        // 更新 Per Core 视图
-        perCoreView.removeAllViews();
-        for (CpuCoreInfo core : cores) {
-            View coreItem = inflater.inflate(R.layout.item_cpu_core_bar, perCoreView, false);
+        if (perCoreView != null) {
+            perCoreView.removeAllViews();
+            LayoutInflater inflater = LayoutInflater.from(ctx);
+            for (CpuCoreInfo core : cores) {
+                View item = inflater.inflate(R.layout.item_cpu_core_bar, perCoreView, false);
 
-            TextView tvCoreName = coreItem.findViewById(R.id.tv_core_name);
-            TextView tvCoreFreq = coreItem.findViewById(R.id.tv_core_freq);
-            View barFill = coreItem.findViewById(R.id.view_core_bar_fill);
+                TextView tvName = item.findViewById(R.id.tv_core_name);
+                TextView tvFreq = item.findViewById(R.id.tv_core_freq);
+                View barFill = item.findViewById(R.id.view_core_bar_fill);
 
-            tvCoreName.setText("核心 " + core.getCoreIndex());
-            tvCoreFreq.setText(FormatUtils.formatFreq(core.getCurrentFreqKHz()));
+                if (tvName != null) tvName.setText("核心 " + core.getCoreIndex());
+                if (tvFreq != null) tvFreq.setText(FormatUtils.formatFreq(core.getCurrentFreqKHz()));
 
-            // 设置条形图
-            float ratio = core.getMaxFreqKHz() > 0
-                    ? (float) core.getCurrentFreqKHz() / core.getMaxFreqKHz() : 0f;
-            ratio = Math.min(ratio, 1.0f);
-
-            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) barFill.getLayoutParams();
-            int maxWidth = perCoreView.getWidth() - dpToPx(160);
-            if (maxWidth <= 0) maxWidth = dpToPx(200);
-            params.width = (int) (maxWidth * ratio);
-            barFill.setLayoutParams(params);
-
-            // 颜色根据频率
-            int barColor = getFreqColor(core.getCurrentFreqKHz());
-            barFill.setBackgroundColor(barColor);
-
-            perCoreView.addView(coreItem);
+                if (barFill != null) {
+                    float ratio = core.getMaxFreqKHz() > 0 ? (float) core.getCurrentFreqKHz() / core.getMaxFreqKHz() : 0f;
+                    ratio = Math.min(ratio, 1.0f);
+                    int maxW = perCoreView.getWidth() - dpToPx(160);
+                    if (maxW <= 0) maxW = dpToPx(200);
+                    LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) barFill.getLayoutParams();
+                    lp.width = (int) (maxW * ratio);
+                    barFill.setLayoutParams(lp);
+                    barFill.setBackgroundColor(getFreqColor(core.getCurrentFreqKHz()));
+                }
+                perCoreView.addView(item);
+            }
         }
     }
 
     private void updateCharts() {
-        if (repo == null) return;
-        if (chartCpuTemp != null) {
-            List<HistoryDataPoint> tempData = repo.getHistoryCache().getSeries("cpu_temp");
-            if (tempData != null && !tempData.isEmpty()) {
-                chartCpuTemp.setData(tempData);
-            }
-        }
+        if (repo == null || chartCpuTemp == null) return;
+        List<HistoryDataPoint> data = repo.getHistoryCache().getSeries("cpu_temp");
+        if (data != null && !data.isEmpty()) chartCpuTemp.setData(data);
     }
 
     private void switchToCluster() {
-        showPerCore = false;
-        tabCluster.setBackgroundResource(R.drawable.bg_tab_left);
-        tabCluster.setTextColor(Color.WHITE);
-        tabPerCore.setBackgroundResource(R.drawable.bg_tab_right);
-        tabPerCore.setTextColor(Color.parseColor("#212121"));
-        clusterView.setVisibility(View.VISIBLE);
-        perCoreView.setVisibility(View.GONE);
+        if (tabCluster != null) { tabCluster.setBackgroundResource(R.drawable.bg_tab_left); tabCluster.setTextColor(Color.WHITE); }
+        if (tabPerCore != null) { tabPerCore.setBackgroundResource(R.drawable.bg_tab_right); tabPerCore.setTextColor(Color.parseColor("#212121")); }
+        if (clusterView != null) clusterView.setVisibility(View.VISIBLE);
+        if (perCoreView != null) perCoreView.setVisibility(View.GONE);
     }
 
     private void switchToPerCore() {
-        showPerCore = true;
-        tabPerCore.setBackgroundResource(R.drawable.bg_tab_left);
-        tabPerCore.setTextColor(Color.WHITE);
-        tabCluster.setBackgroundResource(R.drawable.bg_tab_right);
-        tabCluster.setTextColor(Color.parseColor("#212121"));
-        perCoreView.setVisibility(View.VISIBLE);
-        clusterView.setVisibility(View.GONE);
+        if (tabPerCore != null) { tabPerCore.setBackgroundResource(R.drawable.bg_tab_left); tabPerCore.setTextColor(Color.WHITE); }
+        if (tabCluster != null) { tabCluster.setBackgroundResource(R.drawable.bg_tab_right); tabCluster.setTextColor(Color.parseColor("#212121")); }
+        if (perCoreView != null) perCoreView.setVisibility(View.VISIBLE);
+        if (clusterView != null) clusterView.setVisibility(View.GONE);
     }
-
-    // ---- 工具方法 ----
 
     private Map<Long, List<CpuCoreInfo>> groupByCluster(List<CpuCoreInfo> cores) {
         Map<Long, List<CpuCoreInfo>> map = new HashMap<>();
-        for (CpuCoreInfo core : cores) {
-            long maxFreq = core.getMaxFreqKHz();
-            // 将相近频率归为同一 cluster（误差范围内）
-            Long key = findClusterKey(map.keySet(), maxFreq);
-            if (key == null) {
-                key = maxFreq;
-                map.put(key, new ArrayList<>());
-            }
-            map.get(key).add(core);
+        for (CpuCoreInfo c : cores) {
+            Long key = null;
+            for (Long k : map.keySet()) if (Math.abs(k - c.getMaxFreqKHz()) <= 100000L) { key = k; break; }
+            if (key == null) { key = c.getMaxFreqKHz(); map.put(key, new ArrayList<>()); }
+            map.get(key).add(c);
         }
         return map;
     }
 
-    private Long findClusterKey(Iterable<Long> keys, long freq) {
-        for (Long key : keys) {
-            if (Math.abs(key - freq) <= 100000L) { // 100MHz 容差
-                return key;
-            }
-        }
-        return null;
-    }
-
     private long getAvgFreq(List<CpuCoreInfo> cores) {
-        long sum = 0;
-        int count = 0;
-        for (CpuCoreInfo c : cores) {
-            if (c.getCurrentFreqKHz() > 0) {
-                sum += c.getCurrentFreqKHz();
-                count++;
-            }
-        }
-        return count > 0 ? sum / count : 0;
+        long sum = 0; int cnt = 0;
+        for (CpuCoreInfo c : cores) { if (c.getCurrentFreqKHz() > 0) { sum += c.getCurrentFreqKHz(); cnt++; } }
+        return cnt > 0 ? sum / cnt : 0;
     }
 
-    private String getClusterType(CpuCoreInfo core, long maxFreq) {
-        // 基于频率判断类型
-        if (maxFreq < 1_200_000L) return "Efficiency";
-        if (maxFreq < 2_200_000L) return "Performance";
+    private String getClusterType(long maxFreq) {
+        if (maxFreq < 1200000L) return "Efficiency";
+        if (maxFreq < 2200000L) return "Performance";
         return "Prime";
     }
 
-    private int getFreqColor(long freqKHz) {
-        if (freqKHz <= 0) return Color.GRAY;
-        if (freqKHz < 1_500_000L) return Color.parseColor("#4CAF50");
-        if (freqKHz < 2_500_000L) return Color.parseColor("#FFC107");
+    private int getFreqColor(long khz) {
+        if (khz <= 0) return Color.GRAY;
+        if (khz < 1500000L) return Color.parseColor("#4CAF50");
+        if (khz < 2500000L) return Color.parseColor("#FFC107");
         return Color.parseColor("#F44336");
     }
 
     private int dpToPx(int dp) {
-        float density = getResources().getDisplayMetrics().density;
-        return (int) (dp * density);
+        return (int) (dp * getResources().getDisplayMetrics().density);
     }
 }

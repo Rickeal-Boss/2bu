@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,141 +22,91 @@ import com.example.deviceinfoviewer.data.model.HistoryDataPoint;
 import com.example.deviceinfoviewer.data.repository.DeviceRepository;
 import com.example.deviceinfoviewer.widget.MonitorChartView;
 
-import java.util.ArrayList;
 import java.util.List;
 
-/**
- * GPU Fragment — 竞品风格：GPU 信息卡片 + 负载/温度图表
- */
 public class GpuFragment extends Fragment {
 
+    private static final String TAG = "GpuFragment";
     private DeviceRepository repo;
-
-    private TextView tvGpuModel, tvGpuFreqHeader;
-    private TextView tvGpuLoad, tvGpuTemp;
-    private MonitorChartView chartGpuLoad, chartGpuTemp, chartGpuLoadHist;
-
+    private TextView tvGpuModel, tvGpuFreqHeader, tvGpuLoad, tvGpuTemp;
+    private MonitorChartView chartGpuLoad, chartGpuTemp;
     private Handler handler;
     private Runnable chartUpdater;
 
-    @Nullable
-    @Override
+    @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_gpu, container, false);
+        try {
+            return inflater.inflate(R.layout.fragment_gpu, container, false);
+        } catch (Exception e) {
+            Log.e(TAG, "onCreateView failed", e);
+            return new TextView(getContext());
+        }
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        try {
+            repo = DeviceApplication.getDeviceRepository();
+            tvGpuModel = view.findViewById(R.id.tv_gpu_model);
+            tvGpuFreqHeader = view.findViewById(R.id.tv_gpu_freq_header);
+            tvGpuLoad = view.findViewById(R.id.tv_gpu_load);
+            tvGpuTemp = view.findViewById(R.id.tv_gpu_temp);
+            chartGpuLoad = view.findViewById(R.id.chart_gpu_load);
+            chartGpuTemp = view.findViewById(R.id.chart_gpu_temp);
 
-        repo = DeviceApplication.getDeviceRepository();
+            if (chartGpuLoad != null) { chartGpuLoad.setTitle("负载 (%)"); chartGpuLoad.setValueFormat("%.0f", "%"); }
+            if (chartGpuTemp != null) { chartGpuTemp.setTitle("温度"); chartGpuTemp.setChartColor(Color.parseColor("#FF9800")); chartGpuTemp.setValueFormat("%.1f", "°C"); }
 
-        tvGpuModel = view.findViewById(R.id.tv_gpu_model);
-        tvGpuFreqHeader = view.findViewById(R.id.tv_gpu_freq_header);
-        tvGpuLoad = view.findViewById(R.id.tv_gpu_load);
-        tvGpuTemp = view.findViewById(R.id.tv_gpu_temp);
-        chartGpuLoad = view.findViewById(R.id.chart_gpu_load);
-        chartGpuTemp = view.findViewById(R.id.chart_gpu_temp);
-        chartGpuLoadHist = view.findViewById(R.id.chart_gpu_load_hist);
+            if (repo == null) return;
 
-        // 配置图表
-        if (chartGpuLoad != null) {
-            chartGpuLoad.setTitle("负载 (%)");
-            chartGpuLoad.setChartColor(Color.parseColor("#4CAF50"));
-            chartGpuLoad.setValueFormat("%.0f", "%");
-        }
-        if (chartGpuTemp != null) {
-            chartGpuTemp.setTitle("温度");
-            chartGpuTemp.setChartColor(Color.parseColor("#FF9800"));
-            chartGpuTemp.setValueFormat("%.1f", "°C");
-        }
-        if (chartGpuLoadHist != null) {
-            chartGpuLoadHist.setTitle("负载趋势");
-            chartGpuLoadHist.setChartColor(Color.parseColor("#4CAF50"));
-        }
+            repo.getGpuLiveData().observe(getViewLifecycleOwner(), gpu -> {
+                if (gpu != null) updateGpuInfo(gpu);
+            });
 
-        if (repo == null) return;
-
-        // 观察 GPU LiveData
-        repo.getGpuLiveData().observe(getViewLifecycleOwner(), gpu -> {
-            if (gpu == null) return;
-            updateGpuInfo(gpu);
-        });
-
-        // 图表定时更新
-        handler = new Handler(Looper.getMainLooper());
-        chartUpdater = () -> {
-            updateCharts();
-            handler.postDelayed(chartUpdater, 2000);
-        };
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (handler != null && chartUpdater != null) {
-            handler.post(chartUpdater);
+            handler = new Handler(Looper.getMainLooper());
+            chartUpdater = () -> { updateCharts(); if (handler != null) handler.postDelayed(chartUpdater, 2000); };
+        } catch (Exception e) {
+            Log.e(TAG, "onViewCreated failed", e);
         }
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (handler != null && chartUpdater != null) {
-            handler.removeCallbacks(chartUpdater);
-        }
-    }
+    @Override public void onResume() { super.onResume(); if (handler != null && chartUpdater != null) handler.post(chartUpdater); }
+    @Override public void onPause() { super.onPause(); if (handler != null && chartUpdater != null) handler.removeCallbacks(chartUpdater); }
+    @Override public void onDestroyView() { super.onDestroyView(); if (handler != null) { handler.removeCallbacksAndMessages(null); handler = null; } }
 
     private void updateGpuInfo(GpuInfo gpu) {
-        // GPU 型号
         String model = gpu.getModel();
-        if (model == null || model.isEmpty()) {
-            model = gpu.getVendor();
-        }
-        if (model == null || model.isEmpty()) {
-            model = "未知 GPU";
-        }
-        tvGpuModel.setText(model);
+        if (model == null || model.isEmpty()) model = gpu.getVendor();
+        if (model == null || model.isEmpty()) model = "未知 GPU";
+        if (tvGpuModel != null) tvGpuModel.setText(model);
 
-        // GPU 频率
-        if (gpu.getFrequencyKHz() > 0) {
-            tvGpuFreqHeader.setText(FormatUtils.formatFreq(gpu.getFrequencyKHz()));
-        } else {
-            tvGpuFreqHeader.setText("");
+        StringBuilder freqInfo = new StringBuilder();
+        if (gpu.getFrequencyKHz() > 0) freqInfo.append(FormatUtils.formatFreq(gpu.getFrequencyKHz()));
+        if (gpu.getVendor() != null && !gpu.getVendor().isEmpty()) {
+            if (freqInfo.length() > 0) freqInfo.append(" · ");
+            freqInfo.append(gpu.getVendor());
         }
+        if (tvGpuFreqHeader != null) tvGpuFreqHeader.setText(freqInfo.toString());
 
-        // GPU 负载
-        float load = gpu.getLoadPercentage();
-        if (!Float.isNaN(load)) {
-            tvGpuLoad.setText(String.format("%.0f%%", load));
-        } else {
-            tvGpuLoad.setText("N/A");
+        if (tvGpuLoad != null) {
+            float load = gpu.getLoadPercentage();
+            tvGpuLoad.setText(Float.isNaN(load) ? "N/A" : String.format("%.0f%%", load));
         }
 
-        // GPU 温度
-        float temp = gpu.getTemperatureCelsius();
-        if (!Float.isNaN(temp)) {
-            tvGpuTemp.setText(FormatUtils.formatTempCelsius(temp));
-        } else {
-            tvGpuTemp.setText("N/A");
+        if (tvGpuTemp != null) {
+            float temp = gpu.getTemperatureCelsius();
+            tvGpuTemp.setText(Float.isNaN(temp) ? "N/A" : FormatUtils.formatTempCelsius(temp));
         }
     }
 
     private void updateCharts() {
         if (repo == null) return;
+        List<HistoryDataPoint> loadData = repo.getHistoryCache().getSeries("gpu_load");
+        if (loadData != null && !loadData.isEmpty() && chartGpuLoad != null) chartGpuLoad.setData(loadData);
 
-        // GPU 负载历史（从历史缓存读取）
-        List<HistoryDataPoint> gpuLoadData = repo.getHistoryCache().getSeries("gpu_load");
-        if (gpuLoadData != null && !gpuLoadData.isEmpty()) {
-            if (chartGpuLoad != null) chartGpuLoad.setData(gpuLoadData);
-            if (chartGpuLoadHist != null) chartGpuLoadHist.setData(gpuLoadData);
-        }
-
-        // GPU 温度历史
-        List<HistoryDataPoint> gpuTempData = repo.getHistoryCache().getSeries("gpu_temp");
-        if (gpuTempData != null && !gpuTempData.isEmpty()) {
-            if (chartGpuTemp != null) chartGpuTemp.setData(gpuTempData);
-        }
+        List<HistoryDataPoint> tempData = repo.getHistoryCache().getSeries("gpu_temp");
+        if (tempData != null && !tempData.isEmpty() && chartGpuTemp != null) chartGpuTemp.setData(tempData);
     }
 }

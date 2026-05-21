@@ -2,14 +2,11 @@ package com.example.deviceinfoviewer.widget;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
-import android.view.LayoutInflater;
-import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.example.deviceinfoviewer.R;
 import com.example.deviceinfoviewer.data.model.HistoryDataPoint;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
@@ -28,14 +25,14 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 竞品风格监控图表 — 绿色系折线图，带填充效果
- * 基类改用 FrameLayout，配合 merge 标签避免嵌套布局冲突
+ * 竞品风格监控图表 — 纯代码构建，零 XML inflate，安全可靠
  */
-public class MonitorChartView extends FrameLayout {
+public class MonitorChartView extends LinearLayout {
 
-    private TextView tvTitle;
-    private TextView tvCurrentValue;
-    private LineChart lineChart;
+    private final TextView tvTitle;
+    private final TextView tvCurrentValue;
+    private final LineChart lineChart;
+
     private int chartColor = Color.parseColor("#4CAF50");
     private String valueFormat = "%.1f";
     private String valueSuffix = "";
@@ -43,30 +40,87 @@ public class MonitorChartView extends FrameLayout {
 
     public MonitorChartView(Context context) {
         super(context);
-        init(context);
+        tvTitle = buildHeaderRow(context);
+        lineChart = buildChart(context);
+        tvCurrentValue = findCurrentValueView();
+        configureChart(lineChart);
     }
 
     public MonitorChartView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context);
+        tvTitle = buildHeaderRow(context);
+        lineChart = buildChart(context);
+        tvCurrentValue = findCurrentValueView();
+        configureChart(lineChart);
     }
 
     public MonitorChartView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context);
+        tvTitle = buildHeaderRow(context);
+        lineChart = buildChart(context);
+        tvCurrentValue = findCurrentValueView();
+        configureChart(lineChart);
     }
 
-    private void init(Context context) {
-        // 使用 merge 标签的布局，子 View 直接添加到 MonitorChartView（FrameLayout）
-        LayoutInflater.from(context).inflate(R.layout.widget_monitor_chart, this, true);
+    /** 构建标题行：标题 | 当前值 */
+    private TextView buildHeaderRow(Context ctx) {
+        setOrientation(VERTICAL);
 
-        tvTitle = findViewById(R.id.tv_chart_title);
-        tvCurrentValue = findViewById(R.id.tv_chart_current);
-        lineChart = findViewById(R.id.chart_line);
+        LinearLayout headerRow = new LinearLayout(ctx);
+        headerRow.setOrientation(LinearLayout.HORIZONTAL);
+        headerRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        int px4 = dp(4, ctx);
+        headerRow.setPadding(px4, px4, px4, dp(2, ctx));
 
-        if (lineChart != null) {
-            configureChart(lineChart);
+        TextView title = new TextView(ctx);
+        title.setId(View.generateViewId());
+        title.setTextColor(0xFF757575);
+        title.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        title.setLayoutParams(titleLp);
+
+        TextView current = new TextView(ctx);
+        current.setId(View.generateViewId());
+        current.setTextColor(0xFF212121);
+        current.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13);
+        current.setTypeface(null, android.graphics.Typeface.BOLD);
+        current.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        headerRow.addView(title);
+        headerRow.addView(current);
+
+        addView(headerRow, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        return title;
+    }
+
+    /** 构建 LineChart */
+    private LineChart buildChart(Context ctx) {
+        LineChart chart = new LineChart(ctx);
+        chart.setId(View.generateViewId());
+        LineChart.LayoutParams lp = new LineChart.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(120, ctx));
+        chart.setLayoutParams(lp);
+        addView(chart);
+        return chart;
+    }
+
+    /** 找到当前值 TextView（它是 headerRow 的第二个子 View） */
+    private TextView findCurrentValueView() {
+        if (getChildCount() > 0) {
+            android.view.View header = getChildAt(0);
+            if (header instanceof LinearLayout && ((LinearLayout) header).getChildCount() >= 2) {
+                android.view.View v = ((LinearLayout) header).getChildAt(1);
+                if (v instanceof TextView) return (TextView) v;
+            }
         }
+        return null;
     }
 
     private void configureChart(LineChart chart) {
@@ -78,7 +132,6 @@ public class MonitorChartView extends FrameLayout {
         chart.setDrawGridBackground(false);
         chart.setExtraOffsets(0, 4, 0, 8);
 
-        // X 轴
         XAxis xAxis = chart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
@@ -96,7 +149,6 @@ public class MonitorChartView extends FrameLayout {
             }
         });
 
-        // 左 Y 轴
         YAxis leftAxis = chart.getAxisLeft();
         leftAxis.setDrawGridLines(true);
         leftAxis.setGridColor(0xFFE8E8E8);
@@ -107,19 +159,16 @@ public class MonitorChartView extends FrameLayout {
         leftAxis.setAxisMinimum(0f);
         leftAxis.setLabelCount(3, true);
 
-        // 右 Y 轴关闭
         chart.getAxisRight().setEnabled(false);
-
-        // 图例关闭
         Legend legend = chart.getLegend();
         legend.setEnabled(false);
     }
 
+    // ---- 公开 API ----
+
     public void setTitle(String title) {
         this.seriesName = title;
-        if (tvTitle != null) {
-            tvTitle.setText(title);
-        }
+        if (tvTitle != null) tvTitle.setText(title);
     }
 
     public void setCurrentValue(float value) {
@@ -139,7 +188,6 @@ public class MonitorChartView extends FrameLayout {
 
     public void setData(List<HistoryDataPoint> points) {
         if (lineChart == null) return;
-
         if (points == null || points.isEmpty()) {
             lineChart.clear();
             return;
@@ -151,29 +199,13 @@ public class MonitorChartView extends FrameLayout {
         }
 
         LineDataSet set = new LineDataSet(entries, seriesName);
-        set.setColor(chartColor);
-        set.setCircleColor(chartColor);
-        set.setLineWidth(2f);
-        set.setCircleRadius(2f);
-        set.setDrawCircleHole(false);
-        set.setDrawValues(false);
-        set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-        set.setCubicIntensity(0.1f);
-
-        // 填充效果
-        set.setDrawFilled(true);
-        Drawable fill = makeFillDrawable(chartColor);
-        if (fill != null) {
-            set.setFillDrawable(fill);
-        }
+        styleDataSet(set);
 
         LineData data = new LineData(set);
         lineChart.setData(data);
 
-        if (!points.isEmpty()) {
-            HistoryDataPoint last = points.get(points.size() - 1);
-            setCurrentValue(last.getValue());
-        }
+        HistoryDataPoint last = points.get(points.size() - 1);
+        setCurrentValue(last.getValue());
 
         lineChart.notifyDataSetChanged();
         lineChart.invalidate();
@@ -195,19 +227,7 @@ public class MonitorChartView extends FrameLayout {
         } else {
             ArrayList<Entry> empty = new ArrayList<>();
             set = new LineDataSet(empty, seriesName);
-            set.setColor(chartColor);
-            set.setCircleColor(chartColor);
-            set.setLineWidth(2f);
-            set.setCircleRadius(2f);
-            set.setDrawCircleHole(false);
-            set.setDrawValues(false);
-            set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-            set.setCubicIntensity(0.1f);
-            set.setDrawFilled(true);
-            Drawable fill = makeFillDrawable(chartColor);
-            if (fill != null) {
-                set.setFillDrawable(fill);
-            }
+            styleDataSet(set);
             data.addDataSet(set);
         }
 
@@ -219,24 +239,34 @@ public class MonitorChartView extends FrameLayout {
         lineChart.moveViewToX(timestampMillis);
     }
 
-    private Drawable makeFillDrawable(int baseColor) {
-        int r = Color.red(baseColor);
-        int g = Color.green(baseColor);
-        int b = Color.blue(baseColor);
-        int[] colors = {
-                Color.argb(80, r, g, b),
-                Color.argb(10, r, g, b)
-        };
-        return new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, colors);
+    private void styleDataSet(LineDataSet set) {
+        set.setColor(chartColor);
+        set.setCircleColor(chartColor);
+        set.setLineWidth(2f);
+        set.setCircleRadius(2f);
+        set.setDrawCircleHole(false);
+        set.setDrawValues(false);
+        set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        set.setCubicIntensity(0.1f);
+        set.setDrawFilled(true);
+        set.setFillDrawable(makeFill());
+    }
+
+    private GradientDrawable makeFill() {
+        int r = Color.red(chartColor);
+        int g = Color.green(chartColor);
+        int b = Color.blue(chartColor);
+        return new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{Color.argb(80, r, g, b), Color.argb(10, r, g, b)});
     }
 
     public void clear() {
-        if (lineChart != null) {
-            lineChart.clear();
-        }
+        if (lineChart != null) lineChart.clear();
     }
 
-    public LineChart getLineChart() {
-        return lineChart;
+    public LineChart getLineChart() { return lineChart; }
+
+    private static int dp(float dp, Context ctx) {
+        return (int) (dp * ctx.getResources().getDisplayMetrics().density);
     }
 }

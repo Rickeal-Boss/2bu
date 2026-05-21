@@ -64,13 +64,6 @@ public class MainActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.view_pager);
         tabLayout = findViewById(R.id.tab_layout);
 
-        // TabLayout 绿色主题
-        tabLayout.setSelectedTabIndicatorColor(getColor(R.color.on_primary));
-        tabLayout.setTabTextColors(
-                getColor(R.color.text_on_green),
-                getColor(R.color.on_primary)
-        );
-
         // ViewPager2
         TabPagerAdapter adapter = new TabPagerAdapter(this);
         viewPager.setAdapter(adapter);
