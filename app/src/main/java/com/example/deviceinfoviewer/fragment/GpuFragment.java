@@ -29,6 +29,7 @@ public class GpuFragment extends Fragment {
     private static final String TAG = "GpuFragment";
     private DeviceRepository repo;
     private TextView tvGpuModel, tvGpuFreqHeader, tvGpuLoad, tvGpuTemp;
+    private TextView tvGpuVendor, tvGpuRenderer, tvGpuGovernor, tvGpuFreq, tvGpuFreqRange;
     private MonitorChartView chartGpuLoad, chartGpuTemp;
     private Handler handler;
     private Runnable chartUpdater;
@@ -36,12 +37,8 @@ public class GpuFragment extends Fragment {
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        try {
-            return inflater.inflate(R.layout.fragment_gpu, container, false);
-        } catch (Exception e) {
-            Log.e(TAG, "onCreateView failed", e);
-            return new TextView(getContext());
-        }
+        try { return inflater.inflate(R.layout.fragment_gpu, container, false); }
+        catch (Exception e) { Log.e(TAG, "onCreateView failed", e); return new TextView(getContext()); }
     }
 
     @Override
@@ -53,6 +50,11 @@ public class GpuFragment extends Fragment {
             tvGpuFreqHeader = view.findViewById(R.id.tv_gpu_freq_header);
             tvGpuLoad = view.findViewById(R.id.tv_gpu_load);
             tvGpuTemp = view.findViewById(R.id.tv_gpu_temp);
+            tvGpuVendor = view.findViewById(R.id.tv_gpu_vendor);
+            tvGpuRenderer = view.findViewById(R.id.tv_gpu_renderer);
+            tvGpuGovernor = view.findViewById(R.id.tv_gpu_governor);
+            tvGpuFreq = view.findViewById(R.id.tv_gpu_freq);
+            tvGpuFreqRange = view.findViewById(R.id.tv_gpu_freq_range);
             chartGpuLoad = view.findViewById(R.id.chart_gpu_load);
             chartGpuTemp = view.findViewById(R.id.chart_gpu_temp);
 
@@ -67,9 +69,7 @@ public class GpuFragment extends Fragment {
 
             handler = new Handler(Looper.getMainLooper());
             chartUpdater = () -> { updateCharts(); if (handler != null) handler.postDelayed(chartUpdater, 2000); };
-        } catch (Exception e) {
-            Log.e(TAG, "onViewCreated failed", e);
-        }
+        } catch (Exception e) { Log.e(TAG, "onViewCreated failed", e); }
     }
 
     @Override public void onResume() { super.onResume(); if (handler != null && chartUpdater != null) handler.post(chartUpdater); }
@@ -77,35 +77,52 @@ public class GpuFragment extends Fragment {
     @Override public void onDestroyView() { super.onDestroyView(); if (handler != null) { handler.removeCallbacksAndMessages(null); handler = null; } }
 
     private void updateGpuInfo(GpuInfo gpu) {
+        // 型号（优先 GPU model，其次 vendor）
         String model = gpu.getModel();
         if (model == null || model.isEmpty()) model = gpu.getVendor();
         if (model == null || model.isEmpty()) model = "未知 GPU";
         if (tvGpuModel != null) tvGpuModel.setText(model);
 
-        StringBuilder freqInfo = new StringBuilder();
-        if (gpu.getFrequencyKHz() > 0) freqInfo.append(FormatUtils.formatFreq(gpu.getFrequencyKHz()));
-        if (gpu.getVendor() != null && !gpu.getVendor().isEmpty()) {
-            if (freqInfo.length() > 0) freqInfo.append(" · ");
-            freqInfo.append(gpu.getVendor());
+        // 头部信息行：频率 + 负载简要
+        StringBuilder headerInfo = new StringBuilder();
+        if (gpu.getFrequencyKHz() > 0) headerInfo.append(FormatUtils.formatFreq(gpu.getFrequencyKHz()));
+        float load = gpu.getLoadPercentage();
+        if (!Float.isNaN(load)) {
+            if (headerInfo.length() > 0) headerInfo.append(" · ");
+            headerInfo.append(String.format("%.0f%%", load));
         }
-        if (tvGpuFreqHeader != null) tvGpuFreqHeader.setText(freqInfo.toString());
+        if (tvGpuFreqHeader != null) tvGpuFreqHeader.setText(headerInfo.toString());
 
-        if (tvGpuLoad != null) {
-            float load = gpu.getLoadPercentage();
-            tvGpuLoad.setText(Float.isNaN(load) ? "N/A" : String.format("%.0f%%", load));
-        }
+        // 负载大字
+        if (tvGpuLoad != null) tvGpuLoad.setText(Float.isNaN(load) ? "N/A" : String.format("%.0f%%", load));
 
-        if (tvGpuTemp != null) {
-            float temp = gpu.getTemperatureCelsius();
-            tvGpuTemp.setText(Float.isNaN(temp) ? "N/A" : FormatUtils.formatTempCelsius(temp));
+        // 温度大字
+        float temp = gpu.getTemperatureCelsius();
+        if (tvGpuTemp != null) tvGpuTemp.setText(Float.isNaN(temp) ? "N/A" : FormatUtils.formatTempCelsius(temp));
+
+        // 详细信息
+        String vendor = gpu.getVendor();
+        if (tvGpuVendor != null) tvGpuVendor.setText((vendor != null && !vendor.isEmpty()) ? vendor : "N/A");
+
+        String renderer = gpu.getRenderer();
+        if (tvGpuRenderer != null) tvGpuRenderer.setText((renderer != null && !renderer.isEmpty()) ? renderer : "N/A");
+
+        String governor = gpu.getGovernor();
+        if (tvGpuGovernor != null) tvGpuGovernor.setText((governor != null && !governor.isEmpty()) ? governor : "N/A");
+
+        if (tvGpuFreq != null) tvGpuFreq.setText(gpu.getFrequencyKHz() > 0 ? FormatUtils.formatFreq(gpu.getFrequencyKHz()) : "N/A");
+
+        String range = "";
+        if (gpu.getMinFreqKHz() > 0 && gpu.getMaxFreqKHz() > 0) {
+            range = FormatUtils.formatFreq(gpu.getMinFreqKHz()) + " - " + FormatUtils.formatFreq(gpu.getMaxFreqKHz());
         }
+        if (tvGpuFreqRange != null) tvGpuFreqRange.setText(!range.isEmpty() ? range : "N/A");
     }
 
     private void updateCharts() {
         if (repo == null) return;
         List<HistoryDataPoint> loadData = repo.getHistoryCache().getSeries("gpu_load");
         if (loadData != null && !loadData.isEmpty() && chartGpuLoad != null) chartGpuLoad.setData(loadData);
-
         List<HistoryDataPoint> tempData = repo.getHistoryCache().getSeries("gpu_temp");
         if (tempData != null && !tempData.isEmpty() && chartGpuTemp != null) chartGpuTemp.setData(tempData);
     }

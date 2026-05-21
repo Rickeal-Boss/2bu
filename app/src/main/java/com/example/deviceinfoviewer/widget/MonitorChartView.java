@@ -196,51 +196,51 @@ public class MonitorChartView extends LinearLayout {
             lineChart.clear();
             return;
         }
-
-        List<Entry> entries = new ArrayList<>();
-        for (HistoryDataPoint p : points) {
-            entries.add(new Entry(p.getTimestampMillis(), p.getValue()));
+        try {
+            List<Entry> entries = new ArrayList<>();
+            for (HistoryDataPoint p : points) {
+                entries.add(new Entry(p.getTimestampMillis(), p.getValue()));
+            }
+            LineDataSet set = new LineDataSet(entries, seriesName);
+            styleDataSet(set);
+            LineData data = new LineData(set);
+            lineChart.setData(data);
+            HistoryDataPoint last = points.get(points.size() - 1);
+            setCurrentValue(last.getValue());
+            lineChart.notifyDataSetChanged();
+            lineChart.invalidate();
+        } catch (Exception e) {
+            lineChart.clear();
         }
-
-        LineDataSet set = new LineDataSet(entries, seriesName);
-        styleDataSet(set);
-
-        LineData data = new LineData(set);
-        lineChart.setData(data);
-
-        HistoryDataPoint last = points.get(points.size() - 1);
-        setCurrentValue(last.getValue());
-
-        lineChart.notifyDataSetChanged();
-        lineChart.invalidate();
     }
 
     public void addDataPoint(long timestampMillis, float value) {
         if (lineChart == null) return;
-
-        LineData data = lineChart.getData();
-        if (data == null) {
-            data = new LineData();
-            lineChart.setData(data);
+        try {
+            LineData data = lineChart.getData();
+            if (data == null) {
+                data = new LineData();
+                lineChart.setData(data);
+            }
+            ILineDataSet existingSet = data.getDataSetByIndex(0);
+            LineDataSet set;
+            if (existingSet instanceof LineDataSet) {
+                set = (LineDataSet) existingSet;
+            } else {
+                ArrayList<Entry> empty = new ArrayList<>();
+                set = new LineDataSet(empty, seriesName);
+                styleDataSet(set);
+                data.addDataSet(set);
+            }
+            data.addEntry(new Entry(timestampMillis, value), 0);
+            setCurrentValue(value);
+            data.notifyDataChanged();
+            lineChart.notifyDataSetChanged();
+            lineChart.setVisibleXRangeMaximum(60f);
+            lineChart.moveViewToX(timestampMillis);
+        } catch (Exception e) {
+            // silently ignore chart update failures
         }
-
-        ILineDataSet existingSet = data.getDataSetByIndex(0);
-        LineDataSet set;
-        if (existingSet instanceof LineDataSet) {
-            set = (LineDataSet) existingSet;
-        } else {
-            ArrayList<Entry> empty = new ArrayList<>();
-            set = new LineDataSet(empty, seriesName);
-            styleDataSet(set);
-            data.addDataSet(set);
-        }
-
-        data.addEntry(new Entry(timestampMillis, value), 0);
-        setCurrentValue(value);
-        data.notifyDataChanged();
-        lineChart.notifyDataSetChanged();
-        lineChart.setVisibleXRangeMaximum(60f);
-        lineChart.moveViewToX(timestampMillis);
     }
 
     private void styleDataSet(LineDataSet set) {
@@ -253,15 +253,25 @@ public class MonitorChartView extends LinearLayout {
         set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
         set.setCubicIntensity(0.1f);
         set.setDrawFilled(true);
-        set.setFillDrawable(makeFill());
+        try {
+            GradientDrawable fill = makeFill();
+            if (fill != null) set.setFillDrawable(fill);
+        } catch (Exception e) {
+            // fallback: use fill color instead
+            set.setFillColor(chartColor & 0x00FFFFFF | 0x30000000);
+        }
     }
 
     private GradientDrawable makeFill() {
-        int r = Color.red(chartColor);
-        int g = Color.green(chartColor);
-        int b = Color.blue(chartColor);
-        return new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{Color.argb(80, r, g, b), Color.argb(10, r, g, b)});
+        try {
+            int r = Color.red(chartColor);
+            int g = Color.green(chartColor);
+            int b = Color.blue(chartColor);
+            return new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{Color.argb(80, r, g, b), Color.argb(10, r, g, b)});
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public void clear() {

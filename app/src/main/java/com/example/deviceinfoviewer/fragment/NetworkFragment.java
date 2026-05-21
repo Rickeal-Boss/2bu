@@ -17,8 +17,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.deviceinfoviewer.DeviceApplication;
 import com.example.deviceinfoviewer.FormatUtils;
 import com.example.deviceinfoviewer.R;
+import com.example.deviceinfoviewer.adapter.NetworkInterfaceAdapter;
 import com.example.deviceinfoviewer.data.model.GpsSatelliteInfo;
 import com.example.deviceinfoviewer.data.model.GpsStatusInfo;
+import com.example.deviceinfoviewer.data.model.MobileNetworkInfo;
 import com.example.deviceinfoviewer.data.model.WifiDetailInfo;
 import com.example.deviceinfoviewer.data.repository.DeviceRepository;
 import com.example.deviceinfoviewer.widget.MonitorChartView;
@@ -32,10 +34,12 @@ public class NetworkFragment extends Fragment {
     private static final String TAG = "NetworkFragment";
     private DeviceRepository repo;
     private TextView tvWifiSsid, tvWifiSignal, tvWifiSpeed, tvWifiIp;
+    private TextView tvMobileType, tvMobileOperator, tvMobileSignal, tvMobileRoaming;
     private TextView tvGpsEnabled, tvGpsSatellites, tvGpsCoord;
     private MonitorChartView chartNetActivity;
-    private RecyclerView recyclerSatellites;
+    private RecyclerView recyclerSatellites, recyclerNetInterfaces;
     private SatelliteAdapter satelliteAdapter;
+    private NetworkInterfaceAdapter netInterfaceAdapter;
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -53,11 +57,16 @@ public class NetworkFragment extends Fragment {
             tvWifiSignal = view.findViewById(R.id.tv_wifi_signal);
             tvWifiSpeed = view.findViewById(R.id.tv_wifi_speed);
             tvWifiIp = view.findViewById(R.id.tv_wifi_ip);
+            tvMobileType = view.findViewById(R.id.tv_mobile_type);
+            tvMobileOperator = view.findViewById(R.id.tv_mobile_operator);
+            tvMobileSignal = view.findViewById(R.id.tv_mobile_signal);
+            tvMobileRoaming = view.findViewById(R.id.tv_mobile_roaming);
             tvGpsEnabled = view.findViewById(R.id.tv_gps_enabled);
             tvGpsSatellites = view.findViewById(R.id.tv_gps_satellites);
             tvGpsCoord = view.findViewById(R.id.tv_gps_coord);
             chartNetActivity = view.findViewById(R.id.chart_net_activity);
             recyclerSatellites = view.findViewById(R.id.recycler_satellites);
+            recyclerNetInterfaces = view.findViewById(R.id.recycler_net_interfaces);
 
             if (chartNetActivity != null) { chartNetActivity.setTitle("网络活动"); chartNetActivity.setValueFormat("%.0f", " KB/s"); }
 
@@ -66,14 +75,23 @@ public class NetworkFragment extends Fragment {
                 satelliteAdapter = new SatelliteAdapter();
                 recyclerSatellites.setAdapter(satelliteAdapter);
             }
+            if (recyclerNetInterfaces != null) {
+                recyclerNetInterfaces.setLayoutManager(new LinearLayoutManager(getContext()));
+                netInterfaceAdapter = new NetworkInterfaceAdapter();
+                recyclerNetInterfaces.setAdapter(netInterfaceAdapter);
+            }
 
             if (repo == null) return;
-            repo.getWifiLiveData().observe(getViewLifecycleOwner(), this::updateWifiInfo);
-            repo.getGpsLiveData().observe(getViewLifecycleOwner(), this::updateGpsInfo);
+            repo.getWifiLiveData().observe(getViewLifecycleOwner(), this::updateWifi);
+            repo.getMobileNetworkLiveData().observe(getViewLifecycleOwner(), this::updateMobile);
+            repo.getGpsLiveData().observe(getViewLifecycleOwner(), this::updateGps);
+            repo.getNetworkInterfacesLiveData().observe(getViewLifecycleOwner(), interfaces -> {
+                if (netInterfaceAdapter != null && interfaces != null) netInterfaceAdapter.setInterfaces(interfaces);
+            });
         } catch (Exception e) { Log.e(TAG, "onViewCreated failed", e); }
     }
 
-    private void updateWifiInfo(WifiDetailInfo wifi) {
+    private void updateWifi(WifiDetailInfo wifi) {
         if (wifi == null) return;
         String ssid = wifi.getSsid();
         if (tvWifiSsid != null) tvWifiSsid.setText((ssid != null && !ssid.isEmpty()) ? ssid : "未连接 WiFi");
@@ -83,7 +101,21 @@ public class NetworkFragment extends Fragment {
         if (tvWifiIp != null) tvWifiIp.setText((ipv4 != null && !ipv4.isEmpty()) ? ipv4 : "");
     }
 
-    private void updateGpsInfo(GpsStatusInfo gps) {
+    private void updateMobile(MobileNetworkInfo mobile) {
+        if (mobile == null) return;
+        if (tvMobileType != null) {
+            String t = mobile.getNetworkType();
+            tvMobileType.setText((t != null && !t.isEmpty()) ? t : "N/A");
+        }
+        if (tvMobileOperator != null) {
+            String op = mobile.getOperatorName();
+            tvMobileOperator.setText((op != null && !op.isEmpty()) ? op : "N/A");
+        }
+        if (tvMobileSignal != null) tvMobileSignal.setText(FormatUtils.formatDbm(mobile.getSignalStrengthDbm()));
+        if (tvMobileRoaming != null) tvMobileRoaming.setText(mobile.isRoaming() ? "是" : "否");
+    }
+
+    private void updateGps(GpsStatusInfo gps) {
         if (gps == null) return;
         if (tvGpsEnabled != null) tvGpsEnabled.setText(gps.isGpsEnabled() ? (gps.isFixAcquired() ? "已定位" : "未定位") : "未启用");
         if (tvGpsSatellites != null) tvGpsSatellites.setText(String.valueOf(gps.getSatelliteCount()));

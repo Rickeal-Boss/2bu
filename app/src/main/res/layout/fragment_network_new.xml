@@ -106,6 +106,67 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- 移动网络卡 -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="1dp"
+            app:cardBackgroundColor="@color/card_background"
+            app:strokeColor="@color/card_stroke"
+            app:strokeWidth="1dp"
+            android:layout_marginBottom="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:text="移动网络"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:text="类型" android:textColor="@color/text_secondary" android:textSize="11sp" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                        <TextView android:id="@+id/tv_mobile_type" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="N/A" android:textColor="@color/text_primary" android:textSize="14sp" android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:text="运营商" android:textColor="@color/text_secondary" android:textSize="11sp" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                        <TextView android:id="@+id/tv_mobile_operator" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="N/A" android:textColor="@color/text_primary" android:textSize="14sp" android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp">
+
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:text="信号" android:textColor="@color/text_secondary" android:textSize="11sp" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                        <TextView android:id="@+id/tv_mobile_signal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="N/A" android:textColor="@color/text_primary" android:textSize="14sp" android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:text="漫游" android:textColor="@color/text_secondary" android:textSize="11sp" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                        <TextView android:id="@+id/tv_mobile_roaming" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="N/A" android:textColor="@color/text_primary" android:textSize="14sp" android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- 网络活动图表 -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -237,6 +298,25 @@
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_satellites"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:overScrollMode="never" />
+
+        <!-- 网络接口 -->
+        <TextView
+            android:text="网络接口"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-medium"
+            android:paddingStart="4dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_net_interfaces"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:nestedScrollingEnabled="false"
