@@ -52,17 +52,20 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Log.i("MainActivity", "step3: layout inflated OK");
 
-        // 工具栏
+        // 工具栏 — 处理状态栏避让
         Toolbar toolbar = findViewById(R.id.toolbar);
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
-            int statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-            v.setPadding(v.getPaddingLeft(), statusBarHeight, v.getPaddingRight(), v.getPaddingBottom());
-            return insets;
-        });
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle("System Monitor");
         }
+
+        // 用 ViewCompat 确保 WindowInsets 正确分发
+        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
+            int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+            // 清除可能存在的主题 padding，仅保留 Insets padding
+            v.setPadding(0, top, 0, 0);
+            return insets;
+        });
 
         viewPager = findViewById(R.id.view_pager);
         tabLayout = findViewById(R.id.tab_layout);

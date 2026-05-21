@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
+import com.example.deviceinfoviewer.fragment.CpuFragment;
 import com.example.deviceinfoviewer.fragment.SafePlaceholderFragment;
 
 /**
@@ -24,6 +25,8 @@ public class TabPagerAdapter extends FragmentStateAdapter {
     @NonNull
     @Override
     public Fragment createFragment(int position) {
+        // 🔍 逐步恢复 Fragment 定位崩溃 — 当前：仅 CPU 真实，其余占位
+        if (position == 0) return new CpuFragment();
         return new SafePlaceholderFragment();
     }
 
