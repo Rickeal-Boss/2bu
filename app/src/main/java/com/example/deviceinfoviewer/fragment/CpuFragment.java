@@ -48,10 +48,13 @@ public class CpuFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         try {
-            return inflater.inflate(R.layout.fragment_cpu, container, false);
+            return inflater.inflate(R.layout.fragment_cpu_minimal, container, false);
         } catch (Exception e) {
             Log.e(TAG, "onCreateView failed", e);
-            return new TextView(getContext());
+            TextView fallback = new TextView(getContext() != null ? getContext() : inflater.getContext());
+            fallback.setText("CPU 页面加载失败");
+            fallback.setPadding(48, 48, 48, 48);
+            return fallback;
         }
     }
 

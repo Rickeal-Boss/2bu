@@ -53,7 +53,7 @@ public class MemoryFragment extends Fragment {
             return inflater.inflate(R.layout.fragment_memory, container, false);
         } catch (Exception e) {
             Log.e(TAG, "onCreateView failed", e);
-            return new TextView(getContext());
+            TextView fb = new TextView(getContext() != null ? getContext() : inflater.getContext()); fb.setText("页面加载失败"); fb.setPadding(48,48,48,48); return fb;
         }
     }
 

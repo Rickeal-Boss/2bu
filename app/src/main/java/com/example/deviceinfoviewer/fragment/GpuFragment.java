@@ -38,7 +38,7 @@ public class GpuFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         try { return inflater.inflate(R.layout.fragment_gpu, container, false); }
-        catch (Exception e) { Log.e(TAG, "onCreateView failed", e); return new TextView(getContext()); }
+        catch (Exception e) { Log.e(TAG, "onCreateView failed", e); TextView fb = new TextView(getContext() != null ? getContext() : inflater.getContext()); fb.setText("页面加载失败"); fb.setPadding(48,48,48,48); return fb; }
     }
 
     @Override
