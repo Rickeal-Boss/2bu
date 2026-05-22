@@ -43,10 +43,4 @@
 
     </LinearLayout>
 
-    <com.example.deviceinfoviewer.widget.MonitorChartView
-        android:id="@+id/chart_cluster_mini"
-        android:layout_width="match_parent"
-        android:layout_height="140dp"
-        android:layout_marginTop="4dp" />
-
 </LinearLayout>
