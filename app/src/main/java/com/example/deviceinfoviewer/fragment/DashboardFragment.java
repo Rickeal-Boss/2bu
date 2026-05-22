@@ -147,9 +147,11 @@ public class DashboardFragment extends Fragment {
             pbStorage.setProgressTintList(getStorageColor(pct));
         });
 
-        // 历史趋势（如果存在）
+        // 历史趋势（延迟到 View 完成 layout 后加载，避免 Android 13 HWUI 崩溃）
         if (chartHistory != null) {
-            chartHistory.setData("CPU温度", repo.getHistoryCache().getSeries("cpu_temp"));
+            chartHistory.post(() -> {
+                chartHistory.setData("CPU温度", repo.getHistoryCache().getSeries("cpu_temp"));
+            });
         }
 
         // RAM 卡片点击弹出 ZRAM 详情
@@ -164,11 +166,20 @@ public class DashboardFragment extends Fragment {
             }
         });
 
-        // 图表定时更新 (CPU温度)
+        // 图表定时更新（延迟首次启动到 View 完成 layout 后）
         chartHandler = new Handler(Looper.getMainLooper());
-        chartUpdater = () -> {
-            updateChart();
-            chartHandler.postDelayed(chartUpdater, 3000);
+        chartUpdater = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    updateChart();
+                } catch (Exception ignored) {
+                    // 防止图表渲染异常导致崩溃
+                }
+                if (chartHandler != null) {
+                    chartHandler.postDelayed(this, 3000);
+                }
+            }
         };
     }
 
@@ -176,7 +187,8 @@ public class DashboardFragment extends Fragment {
     public void onResume() {
         super.onResume();
         if (chartHandler != null && chartUpdater != null) {
-            chartHandler.post(chartUpdater);
+            // 延迟首次启动，确保 View 已完成 layout
+            chartHandler.postDelayed(chartUpdater, 200);
         }
     }
 

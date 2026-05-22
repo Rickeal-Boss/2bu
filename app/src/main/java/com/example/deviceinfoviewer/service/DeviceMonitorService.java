@@ -36,12 +36,12 @@ public class DeviceMonitorService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Intent notificationIntent = new Intent(this, MainActivity.class);
-        int pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            pendingFlags |= PendingIntent.FLAG_IMMUTABLE;
+            flags |= PendingIntent.FLAG_IMMUTABLE;
         }
         PendingIntent pendingIntent = PendingIntent.getActivity(
-                this, 0, notificationIntent, pendingFlags);
+                this, 0, notificationIntent, flags);
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("设备信息监控")
@@ -51,13 +51,7 @@ public class DeviceMonitorService extends Service {
                 .setOngoing(true)
                 .build();
 
-        // API 34+ 需指定 foregroundServiceType
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(NOTIFICATION_ID, notification,
-                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
-        } else {
-            startForeground(NOTIFICATION_ID, notification);
-        }
+        startForeground(NOTIFICATION_ID, notification);
 
         // 获取全局 Repository 单例并开始采集
         repository = DeviceApplication.getDeviceRepository();

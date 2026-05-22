@@ -58,6 +58,8 @@ public class HistoryChartView extends LinearLayout {
         lineChart.setScaleEnabled(true);
         lineChart.setPinchZoom(true);
         lineChart.setDrawGridBackground(false);
+        // 修复 Android 13 HWUI Native Crash：禁用图表硬件加速
+        lineChart.setHardwareAccelerationEnabled(false);
 
         // X 轴
         XAxis xAxis = lineChart.getXAxis();
@@ -101,7 +103,7 @@ public class HistoryChartView extends LinearLayout {
             set.setLineWidth(2f);
             set.setCircleRadius(3f);
             set.setDrawValues(false);
-            set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+            set.setMode(LineDataSet.Mode.HORIZONTAL_BEZIER);
             data.addDataSet(set);
         }
 
@@ -133,7 +135,7 @@ public class HistoryChartView extends LinearLayout {
         set.setLineWidth(2f);
         set.setCircleRadius(3f);
         set.setDrawValues(false);
-        set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        set.setMode(LineDataSet.Mode.HORIZONTAL_BEZIER);
 
         LineData data = new LineData(set);
         lineChart.setData(data);

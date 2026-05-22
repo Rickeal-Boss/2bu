@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.DeviceInfoViewer" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimary">@color/accent</item>
         <item name="colorPrimaryVariant">@color/primary_dark</item>
         <item name="colorOnPrimary">@color/on_primary</item>
         <item name="colorSecondary">@color/secondary</item>
@@ -12,8 +12,8 @@
         <item name="colorOnSurface">@color/text_on_dark</item>
         <item name="colorError">@color/error</item>
         <item name="colorOnError">@color/on_error</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:navigationBarColor">@color/background_dark</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

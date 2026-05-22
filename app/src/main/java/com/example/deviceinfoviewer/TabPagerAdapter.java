@@ -5,17 +5,20 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
-import com.example.deviceinfoviewer.fragment.CpuFragment;
-import com.example.deviceinfoviewer.fragment.SafePlaceholderFragment;
+import com.example.deviceinfoviewer.fragment.BatteryFragment;
+import com.example.deviceinfoviewer.fragment.DashboardFragment;
+import com.example.deviceinfoviewer.fragment.HardwareFragment;
+import com.example.deviceinfoviewer.fragment.NetworkFragment;
+import com.example.deviceinfoviewer.fragment.SystemFragment;
 
 /**
- * ViewPager2 的 FragmentStateAdapter — 竞品风格 Tab：CPU/GPU/内存/电池/网络
+ * ViewPager2 的 FragmentStateAdapter，管理5个Tab
  */
 public class TabPagerAdapter extends FragmentStateAdapter {
 
     private static final int TAB_COUNT = 5;
     private static final String[] TAB_TITLES = {
-        "CPU", "GPU", "内存", "电池", "网络"
+        "仪表盘", "硬件", "系统", "网络", "电池"
     };
 
     public TabPagerAdapter(@NonNull FragmentActivity fragmentActivity) {
@@ -25,9 +28,14 @@ public class TabPagerAdapter extends FragmentStateAdapter {
     @NonNull
     @Override
     public Fragment createFragment(int position) {
-        // 🔍 逐步恢复 Fragment 定位崩溃 — 当前：仅 CPU 真实，其余占位
-        if (position == 0) return new CpuFragment();
-        return new SafePlaceholderFragment();
+        switch (position) {
+            case 0: return new DashboardFragment();
+            case 1: return new HardwareFragment();
+            case 2: return new SystemFragment();
+            case 3: return new NetworkFragment();
+            case 4: return new BatteryFragment();
+            default: return new DashboardFragment();
+        }
     }
 
     @Override

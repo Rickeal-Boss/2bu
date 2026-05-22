@@ -1,8 +1,6 @@
 package com.example.deviceinfoviewer.fragment;
 
-import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.deviceinfoviewer.DeviceApplication;
 import com.example.deviceinfoviewer.FormatUtils;
@@ -21,136 +20,254 @@ import com.example.deviceinfoviewer.adapter.NetworkInterfaceAdapter;
 import com.example.deviceinfoviewer.data.model.GpsSatelliteInfo;
 import com.example.deviceinfoviewer.data.model.GpsStatusInfo;
 import com.example.deviceinfoviewer.data.model.MobileNetworkInfo;
+import com.example.deviceinfoviewer.data.model.NetworkInterfaceInfo;
 import com.example.deviceinfoviewer.data.model.WifiDetailInfo;
 import com.example.deviceinfoviewer.data.repository.DeviceRepository;
-import com.example.deviceinfoviewer.widget.MonitorChartView;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * 网络 Fragment — WiFi / 移动网络 / 网络接口 / GPS 卫星，直接观察 Repository LiveData
+ */
 public class NetworkFragment extends Fragment {
 
-    private static final String TAG = "NetworkFragment";
     private DeviceRepository repo;
-    private TextView tvWifiSsid, tvWifiSignal, tvWifiSpeed, tvWifiIp;
-    private TextView tvMobileType, tvMobileOperator, tvMobileSignal, tvMobileRoaming;
-    private TextView tvGpsEnabled, tvGpsSatellites, tvGpsCoord;
-    private MonitorChartView chartNetActivity;
-    private RecyclerView recyclerSatellites, recyclerNetInterfaces;
-    private SatelliteAdapter satelliteAdapter;
-    private NetworkInterfaceAdapter netInterfaceAdapter;
 
-    @Nullable @Override
+    // WiFi
+    private TextView tvWifiSsid, tvWifiBssid, tvWifiSignal, tvWifiSpeed;
+    private TextView tvWifiIpv4, tvWifiIpv6, tvWifiMac, tvWifiGateway, tvWifiDns;
+    // 移动网络
+    private TextView tvMobileType, tvMobileOperator, tvMobileSignal, tvMobileRoaming;
+    // GPS
+    private TextView tvGpsEnabled, tvGpsLongitude, tvGpsLatitude, tvGpsAccuracy, tvGpsSatellites;
+    // 列表
+    private RecyclerView recyclerNetInterfaces, recyclerSatellites;
+    private NetworkInterfaceAdapter netInterfaceAdapter;
+    private SatelliteAdapter satelliteAdapter;
+    private SwipeRefreshLayout swipeRefresh;
+
+    @Nullable
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        try { return inflater.inflate(R.layout.fragment_network_new, container, false); }
-        catch (Exception e) { Log.e(TAG, "onCreateView failed", e); TextView fb = new TextView(getContext() != null ? getContext() : inflater.getContext()); fb.setText("页面加载失败"); fb.setPadding(48,48,48,48); return fb; }
+        return inflater.inflate(R.layout.fragment_network, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        try {
-            repo = DeviceApplication.getDeviceRepository();
-            tvWifiSsid = view.findViewById(R.id.tv_wifi_ssid);
-            tvWifiSignal = view.findViewById(R.id.tv_wifi_signal);
-            tvWifiSpeed = view.findViewById(R.id.tv_wifi_speed);
-            tvWifiIp = view.findViewById(R.id.tv_wifi_ip);
-            tvMobileType = view.findViewById(R.id.tv_mobile_type);
-            tvMobileOperator = view.findViewById(R.id.tv_mobile_operator);
-            tvMobileSignal = view.findViewById(R.id.tv_mobile_signal);
-            tvMobileRoaming = view.findViewById(R.id.tv_mobile_roaming);
-            tvGpsEnabled = view.findViewById(R.id.tv_gps_enabled);
-            tvGpsSatellites = view.findViewById(R.id.tv_gps_satellites);
-            tvGpsCoord = view.findViewById(R.id.tv_gps_coord);
-            chartNetActivity = view.findViewById(R.id.chart_net_activity);
-            recyclerSatellites = view.findViewById(R.id.recycler_satellites);
-            recyclerNetInterfaces = view.findViewById(R.id.recycler_net_interfaces);
 
-            if (chartNetActivity != null) { chartNetActivity.setTitle("网络活动"); chartNetActivity.setValueFormat("%.0f", " KB/s"); }
+        repo = DeviceApplication.getDeviceRepository();
 
-            if (recyclerSatellites != null) {
-                recyclerSatellites.setLayoutManager(new LinearLayoutManager(getContext()));
-                satelliteAdapter = new SatelliteAdapter();
-                recyclerSatellites.setAdapter(satelliteAdapter);
-            }
-            if (recyclerNetInterfaces != null) {
-                recyclerNetInterfaces.setLayoutManager(new LinearLayoutManager(getContext()));
-                netInterfaceAdapter = new NetworkInterfaceAdapter();
-                recyclerNetInterfaces.setAdapter(netInterfaceAdapter);
-            }
+        // WiFi
+        tvWifiSsid = view.findViewById(R.id.tv_wifi_ssid);
+        tvWifiBssid = view.findViewById(R.id.tv_wifi_bssid);
+        tvWifiSignal = view.findViewById(R.id.tv_wifi_signal);
+        tvWifiSpeed = view.findViewById(R.id.tv_wifi_speed);
+        tvWifiIpv4 = view.findViewById(R.id.tv_wifi_ipv4);
+        tvWifiIpv6 = view.findViewById(R.id.tv_wifi_ipv6);
+        tvWifiMac = view.findViewById(R.id.tv_wifi_mac);
+        tvWifiGateway = view.findViewById(R.id.tv_wifi_gateway);
+        tvWifiDns = view.findViewById(R.id.tv_wifi_dns);
+        // 移动网络
+        tvMobileType = view.findViewById(R.id.tv_mobile_type);
+        tvMobileOperator = view.findViewById(R.id.tv_mobile_operator);
+        tvMobileSignal = view.findViewById(R.id.tv_mobile_signal);
+        tvMobileRoaming = view.findViewById(R.id.tv_mobile_roaming);
+        // GPS
+        tvGpsEnabled = view.findViewById(R.id.tv_gps_enabled);
+        tvGpsLongitude = view.findViewById(R.id.tv_gps_longitude);
+        tvGpsLatitude = view.findViewById(R.id.tv_gps_latitude);
+        tvGpsAccuracy = view.findViewById(R.id.tv_gps_accuracy);
+        tvGpsSatellites = view.findViewById(R.id.tv_gps_satellites);
 
-            if (repo == null) return;
-            repo.getWifiLiveData().observe(getViewLifecycleOwner(), this::updateWifi);
-            repo.getMobileNetworkLiveData().observe(getViewLifecycleOwner(), this::updateMobile);
-            repo.getGpsLiveData().observe(getViewLifecycleOwner(), this::updateGps);
-            repo.getNetworkInterfacesLiveData().observe(getViewLifecycleOwner(), interfaces -> {
-                if (netInterfaceAdapter != null && interfaces != null) netInterfaceAdapter.setInterfaces(interfaces);
-            });
-        } catch (Exception e) { Log.e(TAG, "onViewCreated failed", e); }
-    }
+        // 网络接口 RecyclerView
+        recyclerNetInterfaces = view.findViewById(R.id.recycler_net_interfaces);
+        recyclerNetInterfaces.setLayoutManager(new LinearLayoutManager(getContext()));
+        netInterfaceAdapter = new NetworkInterfaceAdapter();
+        recyclerNetInterfaces.setAdapter(netInterfaceAdapter);
 
-    private void updateWifi(WifiDetailInfo wifi) {
-        if (wifi == null) return;
-        String ssid = wifi.getSsid();
-        if (tvWifiSsid != null) tvWifiSsid.setText((ssid != null && !ssid.isEmpty()) ? ssid : "未连接 WiFi");
-        if (tvWifiSignal != null) tvWifiSignal.setText(FormatUtils.formatDbm(wifi.getSignalDbm()));
-        if (tvWifiSpeed != null) tvWifiSpeed.setText(wifi.getLinkSpeedMbps() > 0 ? wifi.getLinkSpeedMbps() + " Mbps" : "N/A");
-        String ipv4 = wifi.getIpv4();
-        if (tvWifiIp != null) tvWifiIp.setText((ipv4 != null && !ipv4.isEmpty()) ? ipv4 : "");
-    }
+        // 卫星 RecyclerView
+        recyclerSatellites = view.findViewById(R.id.recycler_satellites);
+        recyclerSatellites.setLayoutManager(new LinearLayoutManager(getContext()));
+        satelliteAdapter = new SatelliteAdapter();
+        recyclerSatellites.setAdapter(satelliteAdapter);
 
-    private void updateMobile(MobileNetworkInfo mobile) {
-        if (mobile == null) return;
-        if (tvMobileType != null) {
-            String t = mobile.getNetworkType();
-            tvMobileType.setText((t != null && !t.isEmpty()) ? t : "N/A");
+        swipeRefresh = view.findViewById(R.id.swipe_refresh);
+
+        if (repo == null) {
+            return;
         }
-        if (tvMobileOperator != null) {
-            String op = mobile.getOperatorName();
-            tvMobileOperator.setText((op != null && !op.isEmpty()) ? op : "N/A");
-        }
-        if (tvMobileSignal != null) tvMobileSignal.setText(FormatUtils.formatDbm(mobile.getSignalStrengthDbm()));
-        if (tvMobileRoaming != null) tvMobileRoaming.setText(mobile.isRoaming() ? "是" : "否");
+
+        // 观察 WiFi LiveData
+        repo.getWifiLiveData().observe(getViewLifecycleOwner(), wifi -> {
+            if (wifi == null) return;
+            tvWifiSsid.setText(wifi.getSsid() != null && !wifi.getSsid().isEmpty()
+                    ? wifi.getSsid() : "N/A");
+            tvWifiBssid.setText(wifi.getBssid() != null && !wifi.getBssid().isEmpty()
+                    ? wifi.getBssid() : "N/A");
+            tvWifiSignal.setText(FormatUtils.formatDbm(wifi.getSignalDbm()));
+            tvWifiSpeed.setText(wifi.getLinkSpeedMbps() > 0
+                    ? wifi.getLinkSpeedMbps() + " Mbps" : "N/A");
+            tvWifiIpv4.setText(wifi.getIpv4() != null && !wifi.getIpv4().isEmpty()
+                    ? wifi.getIpv4() : "N/A");
+            tvWifiIpv6.setText(wifi.getIpv6() != null && !wifi.getIpv6().isEmpty()
+                    ? wifi.getIpv6() : "N/A");
+            tvWifiMac.setText(wifi.getMacAddress() != null && !wifi.getMacAddress().isEmpty()
+                    ? wifi.getMacAddress() : "N/A");
+            tvWifiGateway.setText(wifi.getGateway() != null && !wifi.getGateway().isEmpty()
+                    ? wifi.getGateway() : "N/A");
+            tvWifiDns.setText(wifi.getDns() != null && !wifi.getDns().isEmpty()
+                    ? wifi.getDns() : "N/A");
+        });
+
+        // 观察移动网络 LiveData
+        repo.getMobileNetworkLiveData().observe(getViewLifecycleOwner(), mobile -> {
+            if (mobile == null) return;
+            tvMobileType.setText(mobile.getNetworkType() != null
+                    && !mobile.getNetworkType().isEmpty() ? mobile.getNetworkType() : "N/A");
+            tvMobileOperator.setText(mobile.getOperatorName() != null
+                    && !mobile.getOperatorName().isEmpty() ? mobile.getOperatorName() : "N/A");
+            tvMobileSignal.setText(FormatUtils.formatDbm(mobile.getSignalStrengthDbm()));
+            tvMobileRoaming.setText(mobile.isRoaming() ? "是" : "否");
+        });
+
+        // 观察网络接口列表 LiveData
+        repo.getNetworkInterfacesLiveData().observe(getViewLifecycleOwner(), interfaces -> {
+            if (interfaces != null) {
+                netInterfaceAdapter.setInterfaces(interfaces);
+            }
+        });
+
+        // 观察 GPS LiveData
+        repo.getGpsLiveData().observe(getViewLifecycleOwner(), gps -> {
+            if (gps == null) return;
+            tvGpsEnabled.setText(gps.isGpsEnabled()
+                    ? (gps.isFixAcquired() ? "已定位" : "未定位")
+                    : "未启用/无权限");
+            tvGpsLatitude.setText(!Double.isNaN(gps.getLatitude())
+                    ? String.format(Locale.US, "%.6f", gps.getLatitude()) : "N/A");
+            tvGpsLongitude.setText(!Double.isNaN(gps.getLongitude())
+                    ? String.format(Locale.US, "%.6f", gps.getLongitude()) : "N/A");
+            tvGpsAccuracy.setText(!Float.isNaN(gps.getAccuracy())
+                    ? String.format(Locale.US, "%.1fm", gps.getAccuracy()) : "N/A");
+            tvGpsSatellites.setText(String.valueOf(gps.getSatelliteCount()));
+            satelliteAdapter.setSatellites(gps.getSatellites());
+        });
+
+        swipeRefresh.setOnRefreshListener(() -> {
+            swipeRefresh.setRefreshing(false);
+            if (repo != null) {
+                repo.loadStaticData();
+            }
+        });
     }
 
-    private void updateGps(GpsStatusInfo gps) {
-        if (gps == null) return;
-        if (tvGpsEnabled != null) tvGpsEnabled.setText(gps.isGpsEnabled() ? (gps.isFixAcquired() ? "已定位" : "未定位") : "未启用");
-        if (tvGpsSatellites != null) tvGpsSatellites.setText(String.valueOf(gps.getSatelliteCount()));
-        if (tvGpsCoord != null && !Double.isNaN(gps.getLatitude()) && !Double.isNaN(gps.getLongitude()))
-            tvGpsCoord.setText(String.format(Locale.US, "%.6f, %.6f", gps.getLatitude(), gps.getLongitude()));
-        if (satelliteAdapter != null) satelliteAdapter.setSatellites(gps.getSatellites());
-    }
-
+    // ---- Satellite Adapter (内部类) ----
     private static class SatelliteAdapter extends RecyclerView.Adapter<SatelliteAdapter.VH> {
+
         private final List<GpsSatelliteInfo> satellites = new ArrayList<>();
-        void setSatellites(List<GpsSatelliteInfo> s) { satellites.clear(); if (s != null) satellites.addAll(s); notifyDataSetChanged(); }
-        @NonNull @Override public VH onCreateViewHolder(@NonNull ViewGroup p, int vt) {
-            return new VH(LayoutInflater.from(p.getContext()).inflate(R.layout.item_satellite, p, false)); }
-        @Override public void onBindViewHolder(@NonNull VH h, int pos) {
-            GpsSatelliteInfo sat = satellites.get(pos);
-            String con = sat.getConstellation();
-            h.tvSatFlag.setText(con != null ? getSymbol(con) : "\uD83D\uDEF0");
-            h.tvSatName.setText((sat.getPrn() >= 0 ? "PRN " + sat.getPrn() : "") + (con != null ? " | " + con : ""));
-            StringBuilder d = new StringBuilder();
-            if (!Float.isNaN(sat.getSnr())) d.append("SNR ").append(String.format(Locale.US, "%.0f", sat.getSnr())).append("dB");
-            if (!Float.isNaN(sat.getElevation())) d.append(" ").append(String.format(Locale.US, "%.0f", sat.getElevation())).append("°");
-            h.tvSatDetail.setText(d.length() > 0 ? d.toString() : "N/A");
-            if (!Float.isNaN(sat.getSnr())) { h.tvSatSnr.setText(String.format(Locale.US, "%.0fdB", sat.getSnr()));
-                float snr = sat.getSnr(); int cr = snr >= 35 ? R.color.status_good : snr >= 25 ? R.color.status_warning : R.color.text_secondary;
-                h.tvSatSnr.setTextColor(h.itemView.getResources().getColor(cr, null)); }
-            else h.tvSatSnr.setText("N/A");
+
+        void setSatellites(List<GpsSatelliteInfo> satellites) {
+            this.satellites.clear();
+            if (satellites != null) {
+                this.satellites.addAll(satellites);
+            }
+            notifyDataSetChanged();
         }
-        @Override public int getItemCount() { return satellites.size(); }
-        private static String getSymbol(String c) {
-            if (c == null) return "\uD83D\uDEF0";
-            switch (c.toUpperCase()) { case "GPS": return "\uD83C\uDDFA\uD83C\uDDF8"; case "GLONASS": return "\uD83C\uDDF7\uD83C\uDDFA"; case "BEIDOU": return "\uD83C\uDDE8\uD83C\uDDF3"; case "GALILEO": return "\uD83C\uDDEA\uD83C\uDDFA"; default: return "\uD83D\uDEF0"; }
+
+        @NonNull
+        @Override
+        public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_satellite, parent, false);
+            return new VH(v);
         }
+
+        @Override
+        public void onBindViewHolder(@NonNull VH holder, int position) {
+            GpsSatelliteInfo sat = satellites.get(position);
+
+            String constellation = sat.getConstellation();
+            holder.tvSatFlag.setText(getConstellationSymbol(constellation));
+
+            String name;
+            if (sat.getPrn() >= 0) {
+                name = "PRN " + sat.getPrn();
+                if (constellation != null && !constellation.isEmpty()) {
+                    name += " | " + constellation;
+                }
+            } else {
+                name = constellation != null && !constellation.isEmpty() ? constellation : "未知";
+            }
+            holder.tvSatName.setText(name);
+
+            StringBuilder detail = new StringBuilder();
+            if (!Float.isNaN(sat.getSnr())) {
+                detail.append("SNR ").append(String.format(Locale.US, "%.0f", sat.getSnr())).append("dB");
+            }
+            if (!Float.isNaN(sat.getElevation())) {
+                detail.append(" 仰角").append(String.format(Locale.US, "%.0f", sat.getElevation())).append("°");
+            }
+            if (!Float.isNaN(sat.getAzimuth())) {
+                detail.append(" 方位").append(String.format(Locale.US, "%.0f", sat.getAzimuth())).append("°");
+            }
+            holder.tvSatDetail.setText(detail.length() > 0 ? detail.toString() : "N/A");
+
+            if (!Float.isNaN(sat.getSnr())) {
+                holder.tvSatSnr.setText(String.format(Locale.US, "%.0fdB", sat.getSnr()));
+                float snr = sat.getSnr();
+                int colorRes = snr >= 35 ? R.color.status_good
+                        : snr >= 25 ? R.color.status_warning
+                        : R.color.text_secondary;
+                holder.tvSatSnr.setTextColor(
+                        holder.itemView.getResources().getColor(colorRes, null));
+            } else {
+                holder.tvSatSnr.setText("N/A");
+                holder.tvSatSnr.setTextColor(
+                        holder.itemView.getResources().getColor(R.color.text_secondary, null));
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return satellites.size();
+        }
+
+        private static String getConstellationSymbol(String constellation) {
+            if (constellation == null) return "\uD83D\uDEF0";
+            switch (constellation.toUpperCase()) {
+                case "GPS":
+                    return "\uD83C\uDDFA\uD83C\uDDF8";
+                case "GLONASS":
+                    return "\uD83C\uDDF7\uD83C\uDDFA";
+                case "BEIDOU":
+                    return "\uD83C\uDDE8\uD83C\uDDF3";
+                case "GALILEO":
+                    return "\uD83C\uDDEA\uD83C\uDDFA";
+                case "QZSS":
+                    return "\uD83C\uDDEF\uD83C\uDDF5";
+                case "IRNSS":
+                    return "\uD83C\uDDEE\uD83C\uDDF3";
+                case "SBAS":
+                    return "\uD83D\uDEF0";
+                default:
+                    return "\uD83D\uDEF0";
+            }
+        }
+
         static class VH extends RecyclerView.ViewHolder {
             TextView tvSatFlag, tvSatName, tvSatDetail, tvSatSnr;
-            VH(View v) { super(v); tvSatFlag = v.findViewById(R.id.tv_sat_flag); tvSatName = v.findViewById(R.id.tv_sat_name); tvSatDetail = v.findViewById(R.id.tv_sat_detail); tvSatSnr = v.findViewById(R.id.tv_sat_snr); }
+
+            VH(View v) {
+                super(v);
+                tvSatFlag = v.findViewById(R.id.tv_sat_flag);
+                tvSatName = v.findViewById(R.id.tv_sat_name);
+                tvSatDetail = v.findViewById(R.id.tv_sat_detail);
+                tvSatSnr = v.findViewById(R.id.tv_sat_snr);
+            }
         }
     }
 }

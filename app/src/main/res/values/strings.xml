@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">System Monitor</string>
-    <string name="tab_cpu">CPU</string>
-    <string name="tab_gpu">GPU</string>
-    <string name="tab_memory">内存</string>
-    <string name="tab_network">网络</string>
-    <string name="tab_battery">电池</string>
+    <string name="app_name">设备信息查看器</string>
     <string name="tab_dashboard">仪表盘</string>
     <string name="tab_hardware">硬件</string>
     <string name="tab_system">系统</string>
+    <string name="tab_network">网络</string>
+    <string name="tab_battery">电池</string>
     <string name="menu_dark_mode">深色模式</string>
     <string name="menu_export">导出数据</string>
     <string name="menu_floating_window">悬浮窗</string>

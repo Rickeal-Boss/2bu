@@ -4,9 +4,10 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.WindowInsets;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -26,7 +27,8 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 /**
- * 主 Activity — TabLayout + ViewPager2，竞品绿色主题风格
+ * 主 Activity —— TabLayout + ViewPager2 主框架
+ * 持有全局 DeviceRepository，管理菜单操作
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -37,71 +39,68 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Log.i("MainActivity", "onCreate start, SDK=" + Build.VERSION.SDK_INT);
-
-        settings = AppSettings.getInstance(this);
+        // 必须在 super.onCreate() 之前应用主题以避免配置变更崩溃
+        settings = AppSettings.getInstance(getApplicationContext());
         applyDarkMode();
-        Log.i("MainActivity", "step1: dark mode applied");
 
+        super.onCreate(savedInstanceState);
+
+        // 启用 Edge-to-Edge（全面屏适配）
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             getWindow().setDecorFitsSystemWindows(false);
         }
 
-        Log.i("MainActivity", "step2: inflating layout...");
         setContentView(R.layout.activity_main);
-        Log.i("MainActivity", "step3: layout inflated OK");
 
-        // 工具栏 — 处理状态栏避让
+        // 处理 WindowInsets — 让 Toolbar 留出状态栏空间
         Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("System Monitor");
-        }
-
-        // 用 ViewCompat 确保 WindowInsets 正确分发
         ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
-            int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-            // 清除可能存在的主题 padding，仅保留 Insets padding
-            v.setPadding(0, top, 0, 0);
+            int statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+            v.setPadding(v.getPaddingLeft(), statusBarHeight, v.getPaddingRight(), v.getPaddingBottom());
             return insets;
         });
+        setSupportActionBar(toolbar);
 
         viewPager = findViewById(R.id.view_pager);
         tabLayout = findViewById(R.id.tab_layout);
-        Log.i("MainActivity", "step4: views found");
 
-        // ViewPager2
+        // 设置 ViewPager2
         TabPagerAdapter adapter = new TabPagerAdapter(this);
-        Log.i("MainActivity", "step5: adapter created, setting...");
         viewPager.setAdapter(adapter);
-        Log.i("MainActivity", "step6: adapter set OK");
 
+        // 绑定 TabLayout
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             tab.setText(TabPagerAdapter.getTabTitle(position));
+            switch (position) {
+                case 0: tab.setIcon(R.drawable.ic_dashboard); break;
+                case 1: tab.setIcon(R.drawable.ic_hardware); break;
+                case 2: tab.setIcon(R.drawable.ic_system); break;
+                case 3: tab.setIcon(R.drawable.ic_network); break;
+                case 4: tab.setIcon(R.drawable.ic_battery); break;
+            }
         }).attach();
-        Log.i("MainActivity", "step7: tabs attached");
 
-        // 初始化 Repository
+        // 初始化 Repository（单例）
         repository = DeviceApplication.getDeviceRepository();
-        if (repository != null) {
-            repository.startMonitoring(settings.getRefreshIntervalMs());
-            repository.loadStaticData();
-        }
-        Log.i("MainActivity", "step8: repository ready");
+        repository.startMonitoring(settings.getRefreshIntervalMs());
+        repository.loadStaticData();
 
-        // 权限引导
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PermissionHelper.requestPermissionsSequential(this, new PermissionHelper.PermissionCallback() {
-                @Override
-                public void onAllGranted() { }
-                @Override
-                public void onDenied() { }
-            });
-        }
-        Log.i("MainActivity", "step9: onCreate done");
+        // 权限引导 — 延迟到 Window 完全就绪后执行，避免 BadTokenException
+        viewPager.post(() -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                PermissionHelper.requestPermissionsSequential(MainActivity.this, new PermissionHelper.PermissionCallback() {
+                    @Override
+                    public void onAllGranted() { }
+                    @Override
+                    public void onDenied() { }
+                });
+            }
+        });
     }
 
+    /**
+     * 获取全局 Repository（供 Fragment 使用）
+     */
     public DeviceRepository getRepository() {
         return repository;
     }
@@ -117,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == R.id.action_dark_mode) {
+            // 切换深色模式
             boolean isDark = !settings.isDarkMode();
             settings.setDarkMode(isDark);
             applyDarkMode();
@@ -125,24 +125,29 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (id == R.id.action_export) {
+            // 导出并分享
             String text = ExportHelper.exportToText(repository);
             ExportHelper.shareReport(this, text, getString(R.string.export_text_title));
             return true;
         }
 
         if (id == R.id.action_floating_window) {
+            // 悬浮窗开关
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
                 Toast.makeText(this, "请先授予悬浮窗权限", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
                 startActivity(intent);
                 return true;
             }
+
             boolean enabled = settings.isFloatingWindowEnabled();
             if (enabled) {
+                // 停止悬浮窗
                 stopFloatingWindow();
                 settings.setFloatingWindowEnabled(false);
                 Toast.makeText(this, "悬浮窗已关闭", Toast.LENGTH_SHORT).show();
             } else {
+                // 启动悬浮窗
                 startFloatingWindow();
                 settings.setFloatingWindowEnabled(true);
                 Toast.makeText(this, "悬浮窗已开启", Toast.LENGTH_SHORT).show();
@@ -151,6 +156,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (id == R.id.action_settings) {
+            // 显示设置对话框
             showMainSettingsDialog();
             return true;
         }
@@ -181,8 +187,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showMainSettingsDialog() {
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("设置")
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        builder.setTitle("设置")
                 .setItems(new String[]{"刷新间隔: " + (settings.getRefreshIntervalMs() / 1000) + "秒",
                         "清空历史数据"},
                         (dialog, which) -> {
