@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageSelected(int position) {
                 int color = TabPagerAdapter.getTabColor(position);
-                tabLayout.setTabIndicatorColor(color);
+                tabLayout.setSelectedTabIndicatorColor(color);
                 tabLayout.setTabTextColors(
                         ContextCompat.getColor(MainActivity.this, R.color.text_on_dark_secondary),
                         color);
@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // 初始化第一个 Tab 的颜色
-        tabLayout.setTabIndicatorColor(TabPagerAdapter.getTabColor(0));
+        tabLayout.setSelectedTabIndicatorColor(TabPagerAdapter.getTabColor(0));
         tabLayout.setTabTextColors(
                 ContextCompat.getColor(this, R.color.text_on_dark_secondary),
                 TabPagerAdapter.getTabColor(0));
