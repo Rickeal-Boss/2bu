@@ -68,8 +68,9 @@ public class MainActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.view_pager);
         tabLayout = findViewById(R.id.tab_layout);
 
-        // ViewPager2 + TabLayout
+        // ViewPager2 + TabLayout — offscreenPageLimit=0 避免启动时并行创建多个 MonitorChartView
         TabPagerAdapter adapter = new TabPagerAdapter(this);
+        viewPager.setOffscreenPageLimit(0);
         viewPager.setAdapter(adapter);
 
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
