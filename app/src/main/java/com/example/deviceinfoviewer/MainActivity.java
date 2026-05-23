@@ -110,8 +110,6 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 default: setContentView(R.layout.activity_minimal); break;
             }
-                default: setContentView(R.layout.activity_minimal); break;
-            }
             Log.i(TAG, "diag step " + DIAG_STEP + " layout OK");
             return;
         }
