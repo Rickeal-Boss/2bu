@@ -37,8 +37,10 @@ public class MainActivity extends AppCompatActivity {
     private ViewPager2 viewPager;
     private TabLayout tabLayout;
 
-    // 🔧 诊断模式：true = 最简布局 (activity_minimal)，逐级排除
+    // 🔧 诊断模式：true = 最简布局
     private static final boolean DIAG_MINIMAL = true;
+    // 🔧 诊断步骤：1=Toolbar 2=+TabLayout 3=+ViewPager 4=完整
+    private static final int DIAG_STEP = 1;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,9 +57,13 @@ public class MainActivity extends AppCompatActivity {
 
         // 🔧 诊断分支
         if (DIAG_MINIMAL) {
-            setContentView(R.layout.activity_minimal);
-            Log.i(TAG, "minimal layout OK — theme and basic inflation work");
-            return; // 跳过所有业务逻辑
+            switch (DIAG_STEP) {
+                case 1: setContentView(R.layout.activity_step1); break;
+                case 2: setContentView(R.layout.activity_step2); break;
+                default: setContentView(R.layout.activity_minimal); break;
+            }
+            Log.i(TAG, "diag step " + DIAG_STEP + " layout OK");
+            return;
         }
 
         setContentView(R.layout.activity_main);
