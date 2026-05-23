@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
     // 🔧 诊断模式：true = 最简布局
     private static final boolean DIAG_MINIMAL = true;
     // 🔧 诊断步骤：1=Toolbar 2=+TabLayout 3=+ViewPager 4=完整
-    private static final int DIAG_STEP = 35;
+    private static final int DIAG_STEP = 36;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -107,6 +107,12 @@ public class MainActivity extends AppCompatActivity {
                 case 35:
                     // 仅加载布局，不操作任何 View
                     setContentView(R.layout.activity_step3a);
+                    break;
+                case 36:
+                    // TabLayout+ViewPager2 布局，只 setAdapter，不碰 TabLayout
+                    setContentView(R.layout.activity_step3a);
+                    viewPager = findViewById(R.id.view_pager);
+                    viewPager.setAdapter(new SafePagerAdapter(this));
                     break;
                 default: setContentView(R.layout.activity_minimal); break;
             }
