@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
     // 🔧 诊断模式：true = 最简布局
     private static final boolean DIAG_MINIMAL = true;
     // 🔧 诊断步骤：1=Toolbar 2=+TabLayout 3=+ViewPager 4=完整
-    private static final int DIAG_STEP = 33;
+    private static final int DIAG_STEP = 34;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -92,6 +92,31 @@ public class MainActivity extends AppCompatActivity {
                     setContentView(R.layout.activity_step3c);
                     viewPager = findViewById(R.id.view_pager);
                     viewPager.setAdapter(new SafePagerAdapter(this));
+                    break;
+                case 34:
+                    // 3d: 手动绑定 TabLayout ↔ ViewPager2（绕开 TabLayoutMediator）
+                    setContentView(R.layout.activity_step3a);
+                    viewPager = findViewById(R.id.view_pager);
+                    tabLayout = findViewById(R.id.tab_layout);
+                    viewPager.setOffscreenPageLimit(0);
+                    viewPager.setAdapter(new SafePagerAdapter(this));
+                    // 手动添加 Tab
+                    for (int i = 0; i < 5; i++) {
+                        tabLayout.addTab(tabLayout.newTab().setText(SafePagerAdapter.getTabTitle(i)));
+                    }
+                    tabLayout.addOnTabSelectedListener(new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
+                        @Override public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
+                            viewPager.setCurrentItem(tab.getPosition());
+                        }
+                        @Override public void onTabUnselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+                        @Override public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+                    });
+                    viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+                        @Override public void onPageSelected(int position) {
+                            com.google.android.material.tabs.TabLayout.Tab t = tabLayout.getTabAt(position);
+                            if (t != null) t.select();
+                        }
+                    });
                     break;
                 default: setContentView(R.layout.activity_minimal); break;
             }
