@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
     // 🔧 诊断模式：true = 最简布局
     private static final boolean DIAG_MINIMAL = true;
     // 🔧 诊断步骤：1=Toolbar 2=+TabLayout 3=+ViewPager 4=完整
-    private static final int DIAG_STEP = 2;
+    private static final int DIAG_STEP = 3;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -60,6 +60,17 @@ public class MainActivity extends AppCompatActivity {
             switch (DIAG_STEP) {
                 case 1: setContentView(R.layout.activity_step1); break;
                 case 2: setContentView(R.layout.activity_step2); break;
+                case 3:
+                    setContentView(R.layout.activity_step3);
+                    viewPager = findViewById(R.id.view_pager);
+                    tabLayout = findViewById(R.id.tab_layout);
+                    viewPager.setOffscreenPageLimit(0);
+                    viewPager.setAdapter(new SafePagerAdapter(this));
+                    new com.google.android.material.tabs.TabLayoutMediator(
+                            tabLayout, viewPager,
+                            (tab, p) -> tab.setText(SafePagerAdapter.getTabTitle(p))
+                    ).attach();
+                    break;
                 default: setContentView(R.layout.activity_minimal); break;
             }
             Log.i(TAG, "diag step " + DIAG_STEP + " layout OK");
