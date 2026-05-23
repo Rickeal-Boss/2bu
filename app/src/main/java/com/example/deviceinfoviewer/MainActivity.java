@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
     // 🔧 诊断模式：true = 最简布局
     private static final boolean DIAG_MINIMAL = true;
     // 🔧 诊断步骤：1=Toolbar 2=+TabLayout 3=+ViewPager 4=完整
-    private static final int DIAG_STEP = 38;
+    private static final int DIAG_STEP = 39;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -135,6 +135,22 @@ public class MainActivity extends AppCompatActivity {
                         @Override public void onTabSelected(TabLayout.Tab t) { viewPager.setCurrentItem(t.getPosition()); }
                         @Override public void onTabUnselected(TabLayout.Tab t) {}
                         @Override public void onTabReselected(TabLayout.Tab t) {}
+                    });
+                    break;
+                case 39:
+                    setContentView(R.layout.activity_step3a);
+                    viewPager = findViewById(R.id.view_pager);
+                    tabLayout = findViewById(R.id.tab_layout);
+                    viewPager.setAdapter(new SafePagerAdapter(this));
+                    for (int i = 0; i < 5; i++)
+                        tabLayout.addTab(tabLayout.newTab().setText(SafePagerAdapter.getTabTitle(i)));
+                    tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                        @Override public void onTabSelected(TabLayout.Tab t) { viewPager.setCurrentItem(t.getPosition()); }
+                        @Override public void onTabUnselected(TabLayout.Tab t) {}
+                        @Override public void onTabReselected(TabLayout.Tab t) {}
+                    });
+                    viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+                        @Override public void onPageSelected(int pos) { /* no-op */ }
                     });
                     break;
                 default: setContentView(R.layout.activity_minimal); break;
