@@ -1,5 +1,6 @@
 package com.example.deviceinfoviewer.fragment;
 
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,6 +14,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.deviceinfoviewer.DeviceApplication;
@@ -235,11 +237,10 @@ public class CpuFragment extends Fragment {
         if (data != null && !data.isEmpty()) chartCpuTemp.setData(data);
     }
 
-    @SuppressWarnings("deprecation")
     private void switchToCluster() {
         if (tabCluster != null) {
             tabCluster.setBackgroundResource(R.drawable.bg_tab_left);
-            tabCluster.getBackground().setTint(COLOR_CPU);
+            ViewCompat.setBackgroundTintList(tabCluster, ColorStateList.valueOf(COLOR_CPU));
             tabCluster.setTextColor(Color.WHITE);
         }
         if (tabPerCore != null) {
@@ -250,11 +251,10 @@ public class CpuFragment extends Fragment {
         if (perCoreView != null) perCoreView.setVisibility(View.GONE);
     }
 
-    @SuppressWarnings("deprecation")
     private void switchToPerCore() {
         if (tabPerCore != null) {
             tabPerCore.setBackgroundResource(R.drawable.bg_tab_left);
-            tabPerCore.getBackground().setTint(COLOR_CPU);
+            ViewCompat.setBackgroundTintList(tabPerCore, ColorStateList.valueOf(COLOR_CPU));
             tabPerCore.setTextColor(Color.WHITE);
         }
         if (tabCluster != null) {
