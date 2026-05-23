@@ -19,43 +19,39 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.deviceinfoviewer.DeviceApplication;
 import com.example.deviceinfoviewer.FormatUtils;
 import com.example.deviceinfoviewer.R;
-import com.example.deviceinfoviewer.data.model.BatteryInfo;
 import com.example.deviceinfoviewer.data.model.CpuCoreInfo;
 import com.example.deviceinfoviewer.data.model.CpuInfo;
-import com.example.deviceinfoviewer.data.model.GpuInfo;
 import com.example.deviceinfoviewer.data.model.MemoryInfo;
 import com.example.deviceinfoviewer.data.model.StorageInfo;
 import com.example.deviceinfoviewer.data.repository.DeviceRepository;
 import com.example.deviceinfoviewer.widget.HistoryChartView;
 
 /**
- * 仪表盘 Fragment —— 2x2 卡片网格 + 历史趋势，直接观察 Repository LiveData
+ * 仪表盘 Fragment — DevCheck Pro 风格 2x2 卡片网格 + 历史趋势
  */
 public class DashboardFragment extends Fragment {
 
+    private static final int COLOR_CPU = 0xFFFF9800;
+    private static final int COLOR_BATTERY = 0xFF66BB6A;
+    private static final int COLOR_MEMORY = 0xFF42A5F5;
+    private static final int COLOR_STORAGE = 0xFF7E57C2;
+
     private DeviceRepository repo;
 
-    // CPU 卡片
     private TextView tvCpuTemp, tvCpuFreq;
-    // 电池卡片
     private TextView tvBatteryLevel, tvBatteryTemp;
-    // RAM 卡片
     private TextView tvRamUsage, tvRamDetail;
     private ProgressBar pbRam;
     private View cardRam;
-    // 存储卡片
     private TextView tvStorageUsage, tvStorageDetail;
     private ProgressBar pbStorage;
-    // GPU 温度（从CPU卡片区域显示）
     private TextView tvGpuTemp;
-    // 历史趋势
     private HistoryChartView chartHistory;
     private SwipeRefreshLayout swipeRefresh;
     private Handler chartHandler;
     private Runnable chartUpdater;
 
-    @Nullable
-    @Override
+    @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_dashboard, container, false);
@@ -64,10 +60,8 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         repo = DeviceApplication.getDeviceRepository();
 
-        // 查找所有视图
         tvCpuTemp = view.findViewById(R.id.tv_cpu_temp);
         tvCpuFreq = view.findViewById(R.id.tv_cpu_freq);
         tvBatteryLevel = view.findViewById(R.id.tv_battery_level);
@@ -83,24 +77,20 @@ public class DashboardFragment extends Fragment {
         swipeRefresh = view.findViewById(R.id.swipe_refresh);
         tvGpuTemp = view.findViewById(R.id.tv_gpu_temp);
 
-        if (repo == null) {
-            return;
-        }
+        if (repo == null) return;
 
-        // 观察 CPU LiveData
+        // CPU
         repo.getCpuLiveData().observe(getViewLifecycleOwner(), cpu -> {
             if (cpu == null) return;
             tvCpuTemp.setText(FormatUtils.formatTempCelsius(cpu.getTemperatureCelsius()));
             long maxFreq = 0;
             for (CpuCoreInfo core : cpu.getCores()) {
-                if (core.getCurrentFreqKHz() > maxFreq) {
-                    maxFreq = core.getCurrentFreqKHz();
-                }
+                if (core.getCurrentFreqKHz() > maxFreq) maxFreq = core.getCurrentFreqKHz();
             }
             tvCpuFreq.setText(maxFreq > 0 ? FormatUtils.formatFreq(maxFreq) : "N/A");
         });
 
-        // 观察 GPU LiveData（显示 GPU 温度在 Dashboard）
+        // GPU
         repo.getGpuLiveData().observe(getViewLifecycleOwner(), gpu -> {
             if (gpu == null) return;
             String gpuText = FormatUtils.formatTempCelsius(gpu.getTemperatureCelsius());
@@ -110,14 +100,14 @@ public class DashboardFragment extends Fragment {
             tvGpuTemp.setText(gpuText);
         });
 
-        // 观察电池 LiveData
+        // 电池
         repo.getBatteryLiveData().observe(getViewLifecycleOwner(), bat -> {
             if (bat == null) return;
             tvBatteryLevel.setText(bat.getLevelPercent() >= 0 ? bat.getLevelPercent() + "%" : "N/A");
             tvBatteryTemp.setText(FormatUtils.formatTempCelsius(bat.getTemperatureCelsius()));
         });
 
-        // 观察内存 LiveData
+        // 内存
         repo.getMemoryLiveData().observe(getViewLifecycleOwner(), mem -> {
             if (mem == null || mem.getTotalKB() <= 0) {
                 tvRamUsage.setText("N/A");
@@ -132,7 +122,7 @@ public class DashboardFragment extends Fragment {
             pbRam.setProgressTintList(getProgressColor(pct));
         });
 
-        // 观察存储 LiveData
+        // 存储
         repo.getStorageLiveData().observe(getViewLifecycleOwner(), sto -> {
             if (sto == null || sto.getInternalTotalBytes() <= 0) {
                 tvStorageUsage.setText("N/A");
@@ -144,102 +134,45 @@ public class DashboardFragment extends Fragment {
             tvStorageUsage.setText(FormatUtils.formatBytes(sto.getInternalUsedBytes()));
             tvStorageDetail.setText(pct + "% | " + FormatUtils.formatBytes(sto.getInternalTotalBytes()) + " 总");
             pbStorage.setProgress(pct);
-            pbStorage.setProgressTintList(getStorageColor(pct));
+            pbStorage.setProgressTintList(getProgressColor(pct));
         });
 
-        // 历史趋势（延迟到 View 完成 layout 后加载，避免 Android 13 HWUI 崩溃）
+        // 历史趋势
         if (chartHistory != null) {
-            chartHistory.post(() -> {
-                chartHistory.setData("CPU温度", repo.getHistoryCache().getSeries("cpu_temp"));
-            });
+            chartHistory.setData("CPU温度", repo.getHistoryCache().getSeries("cpu_temp"));
         }
 
-        // RAM 卡片点击弹出 ZRAM 详情
         cardRam.setOnClickListener(v -> showZramDialog());
-
-        // 下拉刷新
         swipeRefresh.setOnRefreshListener(() -> {
             swipeRefresh.setRefreshing(false);
-            if (repo != null) {
-                repo.loadStaticData();
-                updateChart();
-            }
+            if (repo != null) { repo.loadStaticData(); updateChart(); }
         });
 
-        // 图表定时更新（延迟首次启动到 View 完成 layout 后）
         chartHandler = new Handler(Looper.getMainLooper());
-        chartUpdater = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    updateChart();
-                } catch (Exception ignored) {
-                    // 防止图表渲染异常导致崩溃
-                }
-                if (chartHandler != null) {
-                    chartHandler.postDelayed(this, 3000);
-                }
-            }
-        };
+        chartUpdater = () -> { updateChart(); chartHandler.postDelayed(chartUpdater, 3000); };
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (chartHandler != null && chartUpdater != null) {
-            // 延迟首次启动，确保 View 已完成 layout
-            chartHandler.postDelayed(chartUpdater, 200);
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (chartHandler != null && chartUpdater != null) {
-            chartHandler.removeCallbacks(chartUpdater);
-        }
-    }
+    @Override public void onResume() { super.onResume(); if (chartHandler != null && chartUpdater != null) chartHandler.post(chartUpdater); }
+    @Override public void onPause() { super.onPause(); if (chartHandler != null && chartUpdater != null) chartHandler.removeCallbacks(chartUpdater); }
 
     private void updateChart() {
         if (repo == null || chartHistory == null) return;
-        chartHistory.setData("CPU温度",
-                repo.getHistoryCache().getSeries("cpu_temp"));
+        chartHistory.setData("CPU温度", repo.getHistoryCache().getSeries("cpu_temp"));
     }
 
     private ColorStateList getProgressColor(int pct) {
         int color;
-        if (pct < 70) {
-            color = 0xFF4CAF50;
-        } else if (pct < 90) {
-            color = 0xFFFF9800;
-        } else {
-            color = 0xFFF44336;
-        }
+        if (pct < 70) color = 0xFF4CAF50;
+        else if (pct < 90) color = 0xFFFF9800;
+        else color = 0xFFF44336;
         return ColorStateList.valueOf(color);
     }
 
-    private ColorStateList getStorageColor(int pct) {
-        int color;
-        if (pct < 75) {
-            color = 0xFF4CAF50;
-        } else if (pct < 90) {
-            color = 0xFFFF9800;
-        } else {
-            color = 0xFFF44336;
-        }
-        return ColorStateList.valueOf(color);
-    }
-
-    /**
-     * 弹出 ZRAM 详情对话框
-     */
     private void showZramDialog() {
         MemoryInfo memory = repo.getMemoryLiveData().getValue();
         if (memory == null) return;
-
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         builder.setTitle("ZRAM 详情");
-
         StringBuilder msg = new StringBuilder();
         msg.append("原始数据: ").append(memory.getZramOriginalKB() > 0
                 ? FormatUtils.formatBytes(memory.getZramOriginalKB() * 1024L) : "N/A").append("\n");
@@ -248,13 +181,11 @@ public class DashboardFragment extends Fragment {
         msg.append("实际占用: ").append(memory.getZramMemUsedTotalKB() > 0
                 ? FormatUtils.formatBytes(memory.getZramMemUsedTotalKB() * 1024L) : "N/A").append("\n");
         msg.append("压缩比: ").append(memory.getCompressionRatio() > 0
-                ? String.format("%.2f:1", memory.getCompressionRatio()) : "N/A").append("\n");
-        msg.append("\n");
+                ? String.format("%.2f:1", memory.getCompressionRatio()) : "N/A").append("\n\n");
         msg.append("Swap 总量: ").append(memory.getSwapTotalKB() > 0
                 ? FormatUtils.formatBytes(memory.getSwapTotalKB() * 1024L) : "N/A").append("\n");
         msg.append("Swap 已用: ").append(memory.getSwapUsedKB() > 0
                 ? FormatUtils.formatBytes(memory.getSwapUsedKB() * 1024L) : "N/A");
-
         builder.setMessage(msg.toString());
         builder.setPositiveButton("确定", (dialog, which) -> dialog.dismiss());
         builder.show();

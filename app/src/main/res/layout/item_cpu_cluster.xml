@@ -3,8 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@color/background"
-    android:padding="8dp"
+    android:padding="10dp"
     android:layout_marginBottom="4dp">
 
     <LinearLayout
@@ -18,10 +17,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Efficiency"
-            android:textColor="@color/primary"
+            android:textColor="@color/cpu_color"
             android:textSize="14sp"
             android:fontFamily="sans-serif-medium"
-            android:layout_marginEnd="8dp" />
+            android:layout_marginEnd="10dp" />
 
         <TextView
             android:id="@+id/tv_cluster_cores"
@@ -29,7 +28,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="4 核心"
-            android:textColor="@color/text_secondary"
+            android:textColor="@color/text_on_dark_secondary"
             android:textSize="12sp" />
 
         <TextView
@@ -37,8 +36,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=""
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
+            android:textColor="@color/cpu_color"
+            android:textSize="15sp"
             android:fontFamily="sans-serif-medium" />
 
     </LinearLayout>

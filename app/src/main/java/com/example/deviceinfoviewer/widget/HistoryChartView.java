@@ -2,11 +2,11 @@ package com.example.deviceinfoviewer.widget;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.widget.LinearLayout;
 
-import com.example.deviceinfoviewer.R;
 import com.example.deviceinfoviewer.data.model.HistoryDataPoint;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -23,9 +23,15 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 历史图表控件，封装 MPAndroidChart LineChart
+ * 历史图表控件 — 深色主题适配
  */
 public class HistoryChartView extends LinearLayout {
+
+    // 深色主题色
+    private static final int COLOR_TEXT_SECONDARY = 0xFF8B949E;
+    private static final int COLOR_GRID = 0xFF30363D;
+    private static final int COLOR_AXIS = 0xFF484F58;
+    private static final int DEFAULT_LINE_COLOR = 0xFFFF7043;
 
     private LineChart lineChart;
 
@@ -46,25 +52,24 @@ public class HistoryChartView extends LinearLayout {
 
     private void init(Context context) {
         setOrientation(VERTICAL);
-
         lineChart = new LineChart(context);
         lineChart.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         addView(lineChart);
 
-        // 配置图表样式
         lineChart.getDescription().setEnabled(false);
         lineChart.setTouchEnabled(true);
         lineChart.setDragEnabled(true);
         lineChart.setScaleEnabled(true);
         lineChart.setPinchZoom(true);
         lineChart.setDrawGridBackground(false);
-        // 修复 Android 13 HWUI Native Crash：禁用图表硬件加速
-        lineChart.setHardwareAccelerationEnabled(false);
 
-        // X 轴
         XAxis xAxis = lineChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
+        xAxis.setDrawAxisLine(true);
+        xAxis.setAxisLineColor(COLOR_AXIS);
+        xAxis.setTextColor(COLOR_TEXT_SECONDARY);
+        xAxis.setTextSize(10f);
         xAxis.setValueFormatter(new ValueFormatter() {
             private final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
             @Override
@@ -73,21 +78,21 @@ public class HistoryChartView extends LinearLayout {
             }
         });
 
-        // 左 Y 轴
         YAxis leftAxis = lineChart.getAxisLeft();
         leftAxis.setDrawGridLines(true);
+        leftAxis.setGridColor(COLOR_GRID);
+        leftAxis.setGridLineWidth(0.5f);
+        leftAxis.setDrawAxisLine(false);
+        leftAxis.setTextColor(COLOR_TEXT_SECONDARY);
+        leftAxis.setTextSize(10f);
         leftAxis.setAxisMinimum(0f);
 
-        // 右 Y 轴关闭
         lineChart.getAxisRight().setEnabled(false);
-
-        lineChart.getLegend().setEnabled(true);
+        lineChart.getLegend().setEnabled(false);
         lineChart.setNoDataText("暂无数据");
+        lineChart.setNoDataTextColor(COLOR_TEXT_SECONDARY);
     }
 
-    /**
-     * 添加单个数据点
-     */
     public void addDataPoint(String label, long timestampMillis, float value) {
         LineData data = lineChart.getData();
         if (data == null) {
@@ -98,12 +103,18 @@ public class HistoryChartView extends LinearLayout {
         LineDataSet set = (LineDataSet) data.getDataSetByLabel(label, true);
         if (set == null) {
             set = new LineDataSet(new ArrayList<>(), label);
-            set.setColor(Color.parseColor("#1565C0"));
-            set.setCircleColor(Color.parseColor("#1565C0"));
-            set.setLineWidth(2f);
+            set.setColor(DEFAULT_LINE_COLOR);
+            set.setCircleColor(DEFAULT_LINE_COLOR);
+            set.setLineWidth(2.5f);
             set.setCircleRadius(3f);
             set.setDrawValues(false);
-            set.setMode(LineDataSet.Mode.HORIZONTAL_BEZIER);
+            set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+            set.setCubicIntensity(0.05f);
+            set.setDrawFilled(true);
+            try {
+                set.setFillDrawable(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                        new int[]{0x60FF7043, 0x05FF7043}));
+            } catch (Exception ignored) {}
             data.addDataSet(set);
         }
 
@@ -114,13 +125,9 @@ public class HistoryChartView extends LinearLayout {
         lineChart.moveViewToX(timestampMillis);
     }
 
-    /**
-     * 设置完整数据
-     */
     public void setData(String label, List<HistoryDataPoint> points) {
         if (points == null || points.isEmpty()) {
             lineChart.clear();
-            lineChart.setNoDataText("暂无数据");
             return;
         }
 
@@ -130,12 +137,18 @@ public class HistoryChartView extends LinearLayout {
         }
 
         LineDataSet set = new LineDataSet(entries, label);
-        set.setColor(Color.parseColor("#1565C0"));
-        set.setCircleColor(Color.parseColor("#1565C0"));
-        set.setLineWidth(2f);
+        set.setColor(DEFAULT_LINE_COLOR);
+        set.setCircleColor(DEFAULT_LINE_COLOR);
+        set.setLineWidth(2.5f);
         set.setCircleRadius(3f);
         set.setDrawValues(false);
-        set.setMode(LineDataSet.Mode.HORIZONTAL_BEZIER);
+        set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        set.setCubicIntensity(0.05f);
+        set.setDrawFilled(true);
+        try {
+            set.setFillDrawable(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{0x60FF7043, 0x05FF7043}));
+        } catch (Exception ignored) {}
 
         LineData data = new LineData(set);
         lineChart.setData(data);
@@ -143,12 +156,8 @@ public class HistoryChartView extends LinearLayout {
         lineChart.invalidate();
     }
 
-    /**
-     * 清除图表
-     */
     public void clear() {
         lineChart.clear();
-        lineChart.setNoDataText("暂无数据");
     }
 
     public LineChart getLineChart() {

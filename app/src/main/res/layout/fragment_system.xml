@@ -5,12 +5,13 @@
     android:id="@+id/swipe_refresh"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="@color/background_dark">
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="12dp">
+        android:padding="12dp"
+        android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -18,24 +19,41 @@
             android:orientation="vertical">
 
             <!-- 搜索栏 -->
-            <androidx.appcompat.widget.SearchView
-                android:id="@+id/search_view"
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:queryHint="@string/search_hint" />
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/card_bg_dark"
+                android:layout_marginBottom="8dp">
+
+                <androidx.appcompat.widget.SearchView
+                    android:id="@+id/search_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
+                    android:queryHint="@string/search_hint" />
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 设备信息 -->
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="设备信息"
-                android:textSize="14sp"
-                android:textColor="@color/primary"
-                android:textStyle="bold"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
-                android:paddingStart="16dp" />
+                android:paddingStart="8dp">
+                <View android:layout_width="4dp" android:layout_height="18dp"
+                    android:background="@color/storage_color" android:layout_marginEnd="8dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="设备信息"
+                    android:textSize="15sp"
+                    android:textColor="@color/text_on_dark"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/build_params_container"
@@ -43,133 +61,82 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
 
-            <!-- 分隔线 -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="12dp" />
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider_dark"
+                android:layout_marginTop="12dp" android:layout_marginBottom="12dp" />
 
             <!-- 内核与JVM -->
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="内核与JVM"
-                android:textSize="14sp"
-                android:textColor="@color/primary"
-                android:textStyle="bold"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
-                android:paddingStart="16dp" />
+                android:paddingStart="8dp">
+                <View android:layout_width="4dp" android:layout_height="18dp"
+                    android:background="@color/storage_color" android:layout_marginEnd="8dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="内核与 JVM"
+                    android:textSize="15sp"
+                    android:textColor="@color/text_on_dark"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="@color/card_background">
+                app:cardCornerRadius="14dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/card_bg_dark">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="8dp">
+                    android:padding="10dp">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingVertical="6dp"
-                        android:paddingHorizontal="12dp">
-                        <TextView
-                            android:id="@+id/tv_kernel_header"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="内核版本:"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
-                        <TextView
-                            android:id="@+id/tv_kernel"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/na"
-                            android:textColor="@color/primary"
-                            android:textSize="14sp"
-                            android:fontFamily="sans-serif-medium" />
+                    <LinearLayout style="@style/DetailRow">
+                        <TextView android:id="@+id/tv_kernel_header" style="@style/DetailLabel" android:text="内核版本" />
+                        <TextView android:id="@+id/tv_kernel" style="@style/DetailValue" android:text="@string/na" />
                     </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingVertical="6dp"
-                        android:paddingHorizontal="12dp">
-                        <TextView
-                            android:id="@+id/tv_jvm_header"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Java VM:"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
-                        <TextView
-                            android:id="@+id/tv_jvm"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/na"
-                            android:textColor="@color/primary"
-                            android:textSize="14sp"
-                            android:fontFamily="sans-serif-medium" />
+                    <LinearLayout style="@style/DetailRow">
+                        <TextView android:id="@+id/tv_jvm_header" style="@style/DetailLabel" android:text="Java VM" />
+                        <TextView android:id="@+id/tv_jvm" style="@style/DetailValue" android:text="@string/na" />
                     </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingVertical="6dp"
-                        android:paddingHorizontal="12dp">
-                        <TextView
-                            android:id="@+id/tv_bootloader_header"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="引导程序:"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
-                        <TextView
-                            android:id="@+id/tv_bootloader"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/na"
-                            android:textColor="@color/primary"
-                            android:textSize="14sp"
-                            android:fontFamily="sans-serif-medium" />
+                    <LinearLayout style="@style/DetailRow">
+                        <TextView android:id="@+id/tv_bootloader_header" style="@style/DetailLabel" android:text="引导程序" />
+                        <TextView android:id="@+id/tv_bootloader" style="@style/DetailValue" android:text="@string/na" />
                     </LinearLayout>
 
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- 分隔线 -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="12dp" />
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider_dark"
+                android:layout_marginTop="12dp" android:layout_marginBottom="12dp" />
 
             <!-- 存储分区 -->
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="存储分区"
-                android:textSize="14sp"
-                android:textColor="@color/primary"
-                android:textStyle="bold"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
-                android:paddingStart="16dp" />
+                android:paddingStart="8dp">
+                <View android:layout_width="4dp" android:layout_height="18dp"
+                    android:background="@color/storage_color" android:layout_marginEnd="8dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="存储分区"
+                    android:textSize="15sp"
+                    android:textColor="@color/text_on_dark"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/partitions_container"

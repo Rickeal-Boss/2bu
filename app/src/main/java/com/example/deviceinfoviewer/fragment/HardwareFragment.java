@@ -168,9 +168,10 @@ public class HardwareFragment extends Fragment {
      * 根据频率百分比返回颜色
      */
     private int getFreqColor(int pct) {
-        if (getContext() == null) return 0xFF4CAF50;
-        if (pct >= 90) return getResources().getColor(R.color.status_critical, null);
-        if (pct >= 50) return getResources().getColor(R.color.status_warning, null);
-        return getResources().getColor(R.color.status_good, null);
+        android.content.Context ctx = getContext();
+        if (ctx == null) return 0xFF4CAF50;
+        if (pct >= 90) return androidx.core.content.ContextCompat.getColor(ctx, R.color.status_critical);
+        if (pct >= 50) return androidx.core.content.ContextCompat.getColor(ctx, R.color.status_warning);
+        return androidx.core.content.ContextCompat.getColor(ctx, R.color.status_good);
     }
 }

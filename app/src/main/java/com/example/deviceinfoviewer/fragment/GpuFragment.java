@@ -1,6 +1,5 @@
 package com.example.deviceinfoviewer.fragment;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -24,9 +23,15 @@ import com.example.deviceinfoviewer.widget.MonitorChartView;
 
 import java.util.List;
 
+/**
+ * GPU Fragment — DevCheck Pro 风格：紫色主题
+ */
 public class GpuFragment extends Fragment {
 
     private static final String TAG = "GpuFragment";
+    private static final int COLOR_GPU = 0xFFAB47BC;       // GPU 紫色
+    private static final int COLOR_GPU_LIGHT = 0xFFCE93D8;
+
     private DeviceRepository repo;
     private TextView tvGpuModel, tvGpuFreqHeader, tvGpuLoad, tvGpuTemp;
     private TextView tvGpuVendor, tvGpuRenderer, tvGpuGovernor, tvGpuFreq, tvGpuFreqRange;
@@ -58,8 +63,15 @@ public class GpuFragment extends Fragment {
             chartGpuLoad = view.findViewById(R.id.chart_gpu_load);
             chartGpuTemp = view.findViewById(R.id.chart_gpu_temp);
 
-            if (chartGpuLoad != null) { chartGpuLoad.setTitle("负载 (%)"); chartGpuLoad.setValueFormat("%.0f", "%"); }
-            if (chartGpuTemp != null) { chartGpuTemp.setTitle("温度"); chartGpuTemp.setChartColor(Color.parseColor("#FF9800")); chartGpuTemp.setValueFormat("%.1f", "°C"); }
+            // GPU 紫色主题图表
+            if (chartGpuLoad != null) {
+                chartGpuLoad.setChartColor(COLOR_GPU);
+                chartGpuLoad.setValueFormat("%.0f", "%");
+            }
+            if (chartGpuTemp != null) {
+                chartGpuTemp.setChartColor(COLOR_GPU);
+                chartGpuTemp.setValueFormat("%.1f", "°C");
+            }
 
             if (repo == null) return;
 
@@ -77,13 +89,11 @@ public class GpuFragment extends Fragment {
     @Override public void onDestroyView() { super.onDestroyView(); if (handler != null) { handler.removeCallbacksAndMessages(null); handler = null; } }
 
     private void updateGpuInfo(GpuInfo gpu) {
-        // 型号（优先 GPU model，其次 vendor）
         String model = gpu.getModel();
         if (model == null || model.isEmpty()) model = gpu.getVendor();
         if (model == null || model.isEmpty()) model = "未知 GPU";
         if (tvGpuModel != null) tvGpuModel.setText(model);
 
-        // 头部信息行：频率 + 负载简要
         StringBuilder headerInfo = new StringBuilder();
         if (gpu.getFrequencyKHz() > 0) headerInfo.append(FormatUtils.formatFreq(gpu.getFrequencyKHz()));
         float load = gpu.getLoadPercentage();
@@ -93,24 +103,29 @@ public class GpuFragment extends Fragment {
         }
         if (tvGpuFreqHeader != null) tvGpuFreqHeader.setText(headerInfo.toString());
 
-        // 负载大字
         if (tvGpuLoad != null) tvGpuLoad.setText(Float.isNaN(load) ? "N/A" : String.format("%.0f%%", load));
 
-        // 温度大字
         float temp = gpu.getTemperatureCelsius();
         if (tvGpuTemp != null) tvGpuTemp.setText(Float.isNaN(temp) ? "N/A" : FormatUtils.formatTempCelsius(temp));
 
-        // 详细信息
-        String vendor = gpu.getVendor();
-        if (tvGpuVendor != null) tvGpuVendor.setText((vendor != null && !vendor.isEmpty()) ? vendor : "N/A");
+        if (tvGpuVendor != null) {
+            String v = gpu.getVendor();
+            tvGpuVendor.setText((v != null && !v.isEmpty()) ? v : "N/A");
+        }
 
-        String renderer = gpu.getRenderer();
-        if (tvGpuRenderer != null) tvGpuRenderer.setText((renderer != null && !renderer.isEmpty()) ? renderer : "N/A");
+        if (tvGpuRenderer != null) {
+            String r = gpu.getRenderer();
+            tvGpuRenderer.setText((r != null && !r.isEmpty()) ? r : "N/A");
+        }
 
-        String governor = gpu.getGovernor();
-        if (tvGpuGovernor != null) tvGpuGovernor.setText((governor != null && !governor.isEmpty()) ? governor : "N/A");
+        if (tvGpuGovernor != null) {
+            String g = gpu.getGovernor();
+            tvGpuGovernor.setText((g != null && !g.isEmpty()) ? g : "N/A");
+        }
 
-        if (tvGpuFreq != null) tvGpuFreq.setText(gpu.getFrequencyKHz() > 0 ? FormatUtils.formatFreq(gpu.getFrequencyKHz()) : "N/A");
+        if (tvGpuFreq != null) {
+            tvGpuFreq.setText(gpu.getFrequencyKHz() > 0 ? FormatUtils.formatFreq(gpu.getFrequencyKHz()) : "N/A");
+        }
 
         String range = "";
         if (gpu.getMinFreqKHz() > 0 && gpu.getMaxFreqKHz() > 0) {

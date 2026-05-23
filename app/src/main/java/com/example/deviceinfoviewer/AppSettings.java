@@ -20,7 +20,7 @@ public class AppSettings {
     private static final int DEFAULT_REFRESH_INTERVAL_MS = 2000;
     private static final boolean DEFAULT_FLOATING_WINDOW_ENABLED = false;
     private static final float DEFAULT_FLOATING_WINDOW_OPACITY = 0.85f;
-    private static final boolean DEFAULT_DARK_MODE = false;
+    private static final boolean DEFAULT_DARK_MODE = true;
 
     private final SharedPreferences prefs;
 

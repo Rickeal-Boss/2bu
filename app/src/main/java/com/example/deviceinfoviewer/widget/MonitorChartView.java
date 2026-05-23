@@ -14,7 +14,6 @@ import android.widget.TextView;
 
 import com.example.deviceinfoviewer.data.model.HistoryDataPoint;
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
@@ -30,16 +29,24 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 竞品风格监控图表 — 构造函数全 try-catch 防护
+ * DevCheck Pro 风格监控图表 — 支持分类颜色 + 深色主题
  */
 public class MonitorChartView extends LinearLayout {
 
     private static final String TAG = "MonitorChart";
+
+    // 深色主题默认色
+    private static final int COLOR_TEXT_PRIMARY = 0xFFE6EDF3;
+    private static final int COLOR_TEXT_SECONDARY = 0xFF8B949E;
+    private static final int COLOR_GRID = 0xFF30363D;
+    private static final int COLOR_AXIS = 0xFF484F58;
+    private static final int DEFAULT_CHART_COLOR = 0xFFFF9800;
+
     private TextView tvTitle;
     private TextView tvCurrentValue;
     private LineChart lineChart;
 
-    private int chartColor = Color.parseColor("#4CAF50");
+    private int chartColor = DEFAULT_CHART_COLOR;
     private String valueFormat = "%.1f";
     private String valueSuffix = "";
     private String seriesName = "";
@@ -59,7 +66,6 @@ public class MonitorChartView extends LinearLayout {
         safeInit(context);
     }
 
-    /** 安全初始化 — 任何步骤失败都不崩溃 */
     private void safeInit(Context ctx) {
         try {
             setOrientation(VERTICAL);
@@ -70,17 +76,15 @@ public class MonitorChartView extends LinearLayout {
             } catch (Throwable t) {
                 Log.e(TAG, "LineChart init failed", t);
                 lineChart = null;
-                // 降级：显示纯文本标题
-                if (tvTitle != null) tvTitle.setText(tvTitle.getText() + " (图表加载失败)");
+                if (tvTitle != null) tvTitle.setText(tvTitle.getText() + " (加载失败)");
             }
             tvCurrentValue = findCurrentValueView();
         } catch (Throwable t) {
             Log.e(TAG, "safeInit failed", t);
-            // 即使全部失败，至少显示错误文本
             try {
                 TextView err = new TextView(ctx);
                 err.setText("图表加载失败");
-                err.setTextColor(0xFF757575);
+                err.setTextColor(COLOR_TEXT_SECONDARY);
                 err.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
                 err.setPadding(dp(16, ctx), dp(16, ctx), dp(16, ctx), dp(16, ctx));
                 addView(err);
@@ -98,15 +102,15 @@ public class MonitorChartView extends LinearLayout {
 
         TextView title = new TextView(ctx);
         title.setId(View.generateViewId());
-        title.setTextColor(0xFF757575);
+        title.setTextColor(COLOR_TEXT_SECONDARY);
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         title.setLayoutParams(new LinearLayout.LayoutParams(0,
                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView current = new TextView(ctx);
         current.setId(View.generateViewId());
-        current.setTextColor(0xFF212121);
-        current.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        current.setTextColor(COLOR_TEXT_PRIMARY);
+        current.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         current.setTypeface(null, Typeface.BOLD);
         current.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -122,7 +126,7 @@ public class MonitorChartView extends LinearLayout {
         LineChart chart = new LineChart(ctx);
         chart.setId(View.generateViewId());
         chart.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(120, ctx)));
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(130, ctx)));
         addView(chart);
         return chart;
     }
@@ -151,13 +155,15 @@ public class MonitorChartView extends LinearLayout {
             chart.setExtraOffsets(0, 4, 0, 8);
             chart.getAxisRight().setEnabled(false);
             chart.getLegend().setEnabled(false);
+            chart.setNoDataText("等待数据...");
+            chart.setNoDataTextColor(COLOR_TEXT_SECONDARY);
 
             XAxis xAxis = chart.getXAxis();
             xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
             xAxis.setDrawGridLines(false);
             xAxis.setDrawAxisLine(true);
-            xAxis.setAxisLineColor(0xFFE0E0E0);
-            xAxis.setTextColor(0xFF9E9E9E);
+            xAxis.setAxisLineColor(COLOR_AXIS);
+            xAxis.setTextColor(COLOR_TEXT_SECONDARY);
             xAxis.setTextSize(10f);
             xAxis.setGranularity(1f);
             xAxis.setLabelCount(3, true);
@@ -171,10 +177,10 @@ public class MonitorChartView extends LinearLayout {
 
             YAxis leftAxis = chart.getAxisLeft();
             leftAxis.setDrawGridLines(true);
-            leftAxis.setGridColor(0xFFE8E8E8);
+            leftAxis.setGridColor(COLOR_GRID);
             leftAxis.setGridLineWidth(0.5f);
             leftAxis.setDrawAxisLine(false);
-            leftAxis.setTextColor(0xFF9E9E9E);
+            leftAxis.setTextColor(COLOR_TEXT_SECONDARY);
             leftAxis.setTextSize(10f);
             leftAxis.setAxisMinimum(0f);
             leftAxis.setLabelCount(3, true);
@@ -183,10 +189,10 @@ public class MonitorChartView extends LinearLayout {
         }
     }
 
-    // ---- 公开 API (全部 null-safe) ----
+    // ---- 公开 API ----
 
     public void setTitle(String title) {
-        this.seriesName = title;
+        this.seriesName = title != null ? title : "";
         if (tvTitle != null) tvTitle.setText(title);
     }
 
@@ -198,7 +204,11 @@ public class MonitorChartView extends LinearLayout {
         }
     }
 
-    public void setChartColor(int color) { this.chartColor = color; }
+    public void setChartColor(int color) {
+        this.chartColor = color;
+        // 也更新当前值颜色
+        if (tvCurrentValue != null) tvCurrentValue.setTextColor(color);
+    }
 
     public void setValueFormat(String format, String suffix) {
         this.valueFormat = format;
@@ -206,7 +216,10 @@ public class MonitorChartView extends LinearLayout {
     }
 
     public void setData(List<HistoryDataPoint> points) {
-        if (lineChart == null || points == null || points.isEmpty()) { if (lineChart != null) lineChart.clear(); return; }
+        if (lineChart == null || points == null || points.isEmpty()) {
+            if (lineChart != null) lineChart.clear();
+            return;
+        }
         try {
             List<Entry> entries = new ArrayList<>();
             for (HistoryDataPoint p : points) entries.add(new Entry(p.getTimestampMillis(), p.getValue()));
@@ -241,19 +254,19 @@ public class MonitorChartView extends LinearLayout {
         try {
             set.setColor(chartColor);
             set.setCircleColor(chartColor);
-            set.setLineWidth(2f);
+            set.setLineWidth(2.5f);
             set.setCircleRadius(2f);
             set.setDrawCircleHole(false);
             set.setDrawValues(false);
             set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-            set.setCubicIntensity(0.1f);
+            set.setCubicIntensity(0.05f);
             set.setDrawFilled(true);
             try {
                 int r = Color.red(chartColor), g = Color.green(chartColor), b = Color.blue(chartColor);
                 set.setFillDrawable(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                        new int[]{Color.argb(80, r, g, b), Color.argb(10, r, g, b)}));
+                        new int[]{Color.argb(90, r, g, b), Color.argb(5, r, g, b)}));
             } catch (Exception e) {
-                set.setFillColor(chartColor & 0x00FFFFFF | 0x30000000);
+                set.setFillColor((chartColor & 0x00FFFFFF) | 0x30000000);
             }
         } catch (Exception e) { Log.e(TAG, "styleDataSet failed", e); }
     }

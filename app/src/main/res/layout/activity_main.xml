@@ -4,31 +4,39 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="@color/background_dark"
+    android:fitsSystemWindows="true">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
+        android:background="@color/app_bar_bg_dark"
         app:elevation="0dp">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:popupTheme="@style/ThemeOverlay.Material3.Light"
-            app:title="@string/app_name" />
+            android:background="@color/app_bar_bg_dark"
+            app:popupTheme="@style/ThemeOverlay.Material3.Dark"
+            app:title="System Monitor"
+            app:titleTextColor="@color/text_on_dark" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tab_layout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorPrimary"
-            app:tabIndicatorColor="@android:color/white"
-            app:tabSelectedTextColor="@android:color/white"
-            app:tabTextColor="#B3FFFFFF"
+            android:layout_height="48dp"
+            android:background="@color/app_bar_bg_dark"
+            app:tabIndicatorColor="@color/cpu_color"
+            app:tabIndicatorHeight="3dp"
+            app:tabIndicatorFullWidth="false"
+            app:tabIndicatorGravity="bottom"
+            app:tabSelectedTextColor="@color/cpu_color"
+            app:tabTextColor="@color/text_on_dark_secondary"
             app:tabMode="fixed"
-            app:tabGravity="fill" />
+            app:tabGravity="fill"
+            app:tabRippleColor="@null"
+            app:tabTextAppearance="@style/TabTextAppearance" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

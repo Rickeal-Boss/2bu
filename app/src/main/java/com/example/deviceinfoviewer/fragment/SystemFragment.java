@@ -181,7 +181,7 @@ public class SystemFragment extends Fragment {
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         tvLabel.setLayoutParams(labelParams);
         tvLabel.setText(label);
-        tvLabel.setTextColor(getResources().getColor(R.color.text_secondary, null));
+        tvLabel.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.text_secondary));
         tvLabel.setTextSize(14);
 
         TextView tvValue = new TextView(getContext());
@@ -189,7 +189,7 @@ public class SystemFragment extends Fragment {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         tvValue.setText(value);
-        tvValue.setTextColor(getResources().getColor(R.color.primary, null));
+        tvValue.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.text_on_dark));
         tvValue.setTextSize(14);
         tvValue.setTypeface(tvValue.getTypeface(), android.graphics.Typeface.BOLD);
 

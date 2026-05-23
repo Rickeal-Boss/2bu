@@ -30,13 +30,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * CPU Fragment — 设备信息卡片 + 温度状态 + 图表 + Cluster/Per core 核心状态
+ * CPU Fragment — DevCheck Pro 风格：芯片信息 + 温度图表 + Cluster/Per Core 核心频率
  */
 public class CpuFragment extends Fragment {
 
     private static final String TAG = "CpuFragment";
-    private DeviceRepository repo;
 
+    // DevCheck Pro CPU 橙色系
+    private static final int COLOR_CPU = 0xFFFF9800;
+    private static final int COLOR_CPU_DARK = 0xFFE65100;
+    private static final int COLOR_TEXT_SECONDARY_DARK = 0xFF8B949E;
+    private static final int COLOR_TEXT_PRIMARY_DARK = 0xFFE6EDF3;
+    private static final int COLOR_BG_TAB_INACTIVE = 0xFF30363D;
+
+    private DeviceRepository repo;
     private TextView tvCpuModel, tvCpuSpec, tvTempStatus;
     private MonitorChartView chartCpuTemp;
     private TextView tabCluster, tabPerCore;
@@ -48,11 +55,12 @@ public class CpuFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         try {
-            return inflater.inflate(R.layout.fragment_cpu_minimal, container, false);
+            return inflater.inflate(R.layout.fragment_cpu, container, false);
         } catch (Exception e) {
             Log.e(TAG, "onCreateView failed", e);
             TextView fallback = new TextView(getContext() != null ? getContext() : inflater.getContext());
             fallback.setText("CPU 页面加载失败");
+            fallback.setTextColor(COLOR_TEXT_SECONDARY_DARK);
             fallback.setPadding(48, 48, 48, 48);
             return fallback;
         }
@@ -73,8 +81,9 @@ public class CpuFragment extends Fragment {
             clusterView = view.findViewById(R.id.cluster_view);
             perCoreView = view.findViewById(R.id.per_core_view);
 
+            // 配置图表 — 使用 CPU 橙色
             if (chartCpuTemp != null) {
-                chartCpuTemp.setTitle("CPU 温度");
+                chartCpuTemp.setChartColor(COLOR_CPU);
                 chartCpuTemp.setValueFormat("%.1f", "°C");
             }
 
@@ -137,12 +146,12 @@ public class CpuFragment extends Fragment {
         float temp = cpu.getTemperatureCelsius();
         if (Float.isNaN(temp)) {
             tvTempStatus.setText("未知");
-            tvTempStatus.setTextColor(Color.parseColor("#9E9E9E"));
+            tvTempStatus.setTextColor(COLOR_TEXT_SECONDARY_DARK);
         } else {
             tvTempStatus.setText(String.format("%.1f°C", temp));
-            if (temp < 45) tvTempStatus.setTextColor(Color.parseColor("#4CAF50"));
-            else if (temp < 60) tvTempStatus.setTextColor(Color.parseColor("#FF9800"));
-            else tvTempStatus.setTextColor(Color.parseColor("#F44336"));
+            if (temp < 45) tvTempStatus.setTextColor(0xFF4CAF50);
+            else if (temp < 60) tvTempStatus.setTextColor(0xFFFF9800);
+            else tvTempStatus.setTextColor(0xFFF44336);
         }
     }
 
@@ -165,9 +174,18 @@ public class CpuFragment extends Fragment {
                 TextView tvCores = item.findViewById(R.id.tv_cluster_cores);
                 TextView tvFreq = item.findViewById(R.id.tv_cluster_freq);
 
-                if (tvType != null) tvType.setText(getClusterType(e.getKey()));
-                if (tvCores != null) tvCores.setText(clusterCores.size() + " 核心 · 最高 " + FormatUtils.formatFreq(e.getKey()));
-                if (tvFreq != null) tvFreq.setText(FormatUtils.formatFreq(getAvgFreq(clusterCores)));
+                if (tvType != null) {
+                    tvType.setText(getClusterType(e.getKey()));
+                    tvType.setTextColor(COLOR_CPU);
+                }
+                if (tvCores != null) {
+                    tvCores.setText(clusterCores.size() + " 核心 · 最高 " + FormatUtils.formatFreq(e.getKey()));
+                    tvCores.setTextColor(COLOR_TEXT_PRIMARY_DARK);
+                }
+                if (tvFreq != null) {
+                    tvFreq.setText(FormatUtils.formatFreq(getAvgFreq(clusterCores)));
+                    tvFreq.setTextColor(COLOR_CPU);
+                }
 
                 clusterView.addView(item);
             }
@@ -182,9 +200,19 @@ public class CpuFragment extends Fragment {
                 TextView tvName = item.findViewById(R.id.tv_core_name);
                 TextView tvFreq = item.findViewById(R.id.tv_core_freq);
                 View barFill = item.findViewById(R.id.view_core_bar_fill);
+                View barBg = item.findViewById(R.id.view_core_bar_bg);
 
-                if (tvName != null) tvName.setText("核心 " + core.getCoreIndex());
-                if (tvFreq != null) tvFreq.setText(FormatUtils.formatFreq(core.getCurrentFreqKHz()));
+                if (tvName != null) {
+                    tvName.setText("核心 " + core.getCoreIndex());
+                    tvName.setTextColor(COLOR_TEXT_PRIMARY_DARK);
+                }
+                if (tvFreq != null) {
+                    tvFreq.setText(FormatUtils.formatFreq(core.getCurrentFreqKHz()));
+                    tvFreq.setTextColor(COLOR_TEXT_SECONDARY_DARK);
+                }
+                if (barBg != null) {
+                    barBg.setBackgroundColor(COLOR_BG_TAB_INACTIVE);
+                }
 
                 if (barFill != null) {
                     float ratio = core.getMaxFreqKHz() > 0 ? (float) core.getCurrentFreqKHz() / core.getMaxFreqKHz() : 0f;
@@ -207,16 +235,32 @@ public class CpuFragment extends Fragment {
         if (data != null && !data.isEmpty()) chartCpuTemp.setData(data);
     }
 
+    @SuppressWarnings("deprecation")
     private void switchToCluster() {
-        if (tabCluster != null) { tabCluster.setBackgroundResource(R.drawable.bg_tab_left); tabCluster.setTextColor(Color.WHITE); }
-        if (tabPerCore != null) { tabPerCore.setBackgroundResource(R.drawable.bg_tab_right); tabPerCore.setTextColor(Color.parseColor("#212121")); }
+        if (tabCluster != null) {
+            tabCluster.setBackgroundResource(R.drawable.bg_tab_left);
+            tabCluster.getBackground().setTint(COLOR_CPU);
+            tabCluster.setTextColor(Color.WHITE);
+        }
+        if (tabPerCore != null) {
+            tabPerCore.setBackgroundColor(COLOR_BG_TAB_INACTIVE);
+            tabPerCore.setTextColor(COLOR_TEXT_SECONDARY_DARK);
+        }
         if (clusterView != null) clusterView.setVisibility(View.VISIBLE);
         if (perCoreView != null) perCoreView.setVisibility(View.GONE);
     }
 
+    @SuppressWarnings("deprecation")
     private void switchToPerCore() {
-        if (tabPerCore != null) { tabPerCore.setBackgroundResource(R.drawable.bg_tab_left); tabPerCore.setTextColor(Color.WHITE); }
-        if (tabCluster != null) { tabCluster.setBackgroundResource(R.drawable.bg_tab_right); tabCluster.setTextColor(Color.parseColor("#212121")); }
+        if (tabPerCore != null) {
+            tabPerCore.setBackgroundResource(R.drawable.bg_tab_left);
+            tabPerCore.getBackground().setTint(COLOR_CPU);
+            tabPerCore.setTextColor(Color.WHITE);
+        }
+        if (tabCluster != null) {
+            tabCluster.setBackgroundColor(COLOR_BG_TAB_INACTIVE);
+            tabCluster.setTextColor(COLOR_TEXT_SECONDARY_DARK);
+        }
         if (perCoreView != null) perCoreView.setVisibility(View.VISIBLE);
         if (clusterView != null) clusterView.setVisibility(View.GONE);
     }
@@ -225,7 +269,10 @@ public class CpuFragment extends Fragment {
         Map<Long, List<CpuCoreInfo>> map = new HashMap<>();
         for (CpuCoreInfo c : cores) {
             Long key = null;
-            for (Long k : map.keySet()) if (Math.abs(k - c.getMaxFreqKHz()) <= 100000L) { key = k; break; }
+            for (Long k : map.keySet()) if (Math.abs(k - c.getMaxFreqKHz()) <= 100000L) {
+                key = k;
+                break;
+            }
             if (key == null) { key = c.getMaxFreqKHz(); map.put(key, new ArrayList<>()); }
             map.get(key).add(c);
         }
@@ -245,10 +292,10 @@ public class CpuFragment extends Fragment {
     }
 
     private int getFreqColor(long khz) {
-        if (khz <= 0) return Color.GRAY;
-        if (khz < 1500000L) return Color.parseColor("#4CAF50");
-        if (khz < 2500000L) return Color.parseColor("#FFC107");
-        return Color.parseColor("#F44336");
+        if (khz <= 0) return COLOR_TEXT_SECONDARY_DARK;
+        if (khz < 1500000L) return 0xFF4CAF50;
+        if (khz < 2500000L) return 0xFFFFC107;
+        return 0xFFF44336;
     }
 
     private int dpToPx(int dp) {

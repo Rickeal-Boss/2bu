@@ -1,7 +1,6 @@
 package com.example.deviceinfoviewer.fragment;
 
 import android.content.res.ColorStateList;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,38 +22,31 @@ import com.example.deviceinfoviewer.data.model.MemoryInfo;
 import com.example.deviceinfoviewer.data.repository.DeviceRepository;
 import com.example.deviceinfoviewer.widget.MonitorChartView;
 
+/**
+ * Memory Fragment — DevCheck Pro 风格：蓝色主题
+ */
 public class MemoryFragment extends Fragment {
 
     private static final String TAG = "MemoryFragment";
-    private DeviceRepository repo;
+    private static final int COLOR_MEMORY = 0xFF42A5F5;    // 内存蓝色
+    private static final int COLOR_MEMORY_FILL = 0xFF1565C0;
 
-    // 内存概览
+    private DeviceRepository repo;
     private TextView tvMemUsage, tvMemTotal, tvMemUsed, tvMemAvailable;
     private ProgressBar pbMemory;
-
-    // ZRAM
     private TextView tvZramTitle, tvZramDetail;
     private ProgressBar pbZram;
-
-    // Swap
     private TextView tvSwapTitle, tvSwapDetail;
     private ProgressBar pbSwap;
-
-    // 图表
     private MonitorChartView chartMemAvailable, chartMemUsed;
-
     private Handler handler;
     private Runnable chartUpdater;
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        try {
-            return inflater.inflate(R.layout.fragment_memory, container, false);
-        } catch (Exception e) {
-            Log.e(TAG, "onCreateView failed", e);
-            TextView fb = new TextView(getContext() != null ? getContext() : inflater.getContext()); fb.setText("页面加载失败"); fb.setPadding(48,48,48,48); return fb;
-        }
+        try { return inflater.inflate(R.layout.fragment_memory, container, false); }
+        catch (Exception e) { Log.e(TAG, "onCreateView failed", e); TextView fb = new TextView(getContext() != null ? getContext() : inflater.getContext()); fb.setText("页面加载失败"); fb.setPadding(48,48,48,48); return fb; }
     }
 
     @Override
@@ -62,41 +54,34 @@ public class MemoryFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         try {
             repo = DeviceApplication.getDeviceRepository();
-
             tvMemUsage = view.findViewById(R.id.tv_mem_usage);
             tvMemTotal = view.findViewById(R.id.tv_mem_total);
             tvMemUsed = view.findViewById(R.id.tv_mem_used);
             tvMemAvailable = view.findViewById(R.id.tv_mem_available);
             pbMemory = view.findViewById(R.id.pb_memory);
-
             tvZramTitle = view.findViewById(R.id.tv_zram_title);
             tvZramDetail = view.findViewById(R.id.tv_zram_detail);
             pbZram = view.findViewById(R.id.pb_zram);
-
             tvSwapTitle = view.findViewById(R.id.tv_swap_title);
             tvSwapDetail = view.findViewById(R.id.tv_swap_detail);
             pbSwap = view.findViewById(R.id.pb_swap);
-
             chartMemAvailable = view.findViewById(R.id.chart_mem_available);
             chartMemUsed = view.findViewById(R.id.chart_mem_used);
 
+            // 内存蓝色主题图表
             if (chartMemAvailable != null) {
-                chartMemAvailable.setTitle("可用");
-                chartMemAvailable.setChartColor(Color.parseColor("#4CAF50"));
+                chartMemAvailable.setChartColor(COLOR_MEMORY);
                 chartMemAvailable.setValueFormat("%.1f", " GB");
             }
             if (chartMemUsed != null) {
-                chartMemUsed.setTitle("已用");
-                chartMemUsed.setChartColor(Color.parseColor("#FF9800"));
+                chartMemUsed.setChartColor(0xFFF44336);  // 已用用红色
                 chartMemUsed.setValueFormat("%.1f", " GB");
             }
 
             if (repo == null) return;
 
             repo.getMemoryLiveData().observe(getViewLifecycleOwner(), mem -> {
-                if (mem != null && mem.getTotalKB() > 0) {
-                    updateMemoryInfo(mem);
-                }
+                if (mem != null && mem.getTotalKB() > 0) updateMemoryInfo(mem);
             });
 
             handler = new Handler(Looper.getMainLooper());
@@ -107,36 +92,12 @@ public class MemoryFragment extends Fragment {
                     if (handler != null) handler.postDelayed(this, 2000);
                 }
             };
-        } catch (Exception e) {
-            Log.e(TAG, "onViewCreated failed", e);
-        }
+        } catch (Exception e) { Log.e(TAG, "onViewCreated failed", e); }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (handler != null && chartUpdater != null) {
-            handler.post(chartUpdater);
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (handler != null && chartUpdater != null) {
-            handler.removeCallbacks(chartUpdater);
-        }
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        if (handler != null) {
-            handler.removeCallbacksAndMessages(null);
-            handler = null;
-        }
-        chartUpdater = null;
-    }
+    @Override public void onResume() { super.onResume(); if (handler != null && chartUpdater != null) handler.post(chartUpdater); }
+    @Override public void onPause() { super.onPause(); if (handler != null && chartUpdater != null) handler.removeCallbacks(chartUpdater); }
+    @Override public void onDestroyView() { super.onDestroyView(); if (handler != null) { handler.removeCallbacksAndMessages(null); handler = null; } chartUpdater = null; }
 
     private void updateMemoryInfo(MemoryInfo mem) {
         long totalKB = mem.getTotalKB();
@@ -146,16 +107,12 @@ public class MemoryFragment extends Fragment {
         long usedBytes = usedKB * 1024L;
         long availBytes = availKB * 1024L;
 
-        // 使用率百分比
         int pct = (int) ((float) usedKB / totalKB * 100);
         if (tvMemUsage != null) tvMemUsage.setText(pct + "%");
         if (tvMemTotal != null) tvMemTotal.setText(FormatUtils.formatBytes(totalBytes));
         if (tvMemUsed != null) tvMemUsed.setText(FormatUtils.formatBytes(usedBytes));
         if (tvMemAvailable != null) tvMemAvailable.setText(FormatUtils.formatBytes(availBytes));
-        if (pbMemory != null) {
-            pbMemory.setProgress(pct);
-            pbMemory.setProgressTintList(getProgressColor(pct));
-        }
+        if (pbMemory != null) { pbMemory.setProgress(pct); pbMemory.setProgressTintList(getProgressColor(pct)); }
 
         // ZRAM
         long zramOrigKB = mem.getZramOriginalKB();
@@ -165,21 +122,12 @@ public class MemoryFragment extends Fragment {
 
         if (zramOrigKB > 0) {
             int zramPct = (int) ((float) zramUsedKB / zramOrigKB * 100);
-            if (tvZramTitle != null) {
-                tvZramTitle.setText(FormatUtils.formatBytes(zramUsedKB * 1024L));
-            }
-            if (pbZram != null) {
-                pbZram.setProgress(zramPct);
-                pbZram.setProgressTintList(getProgressColor(zramPct));
-            }
+            if (tvZramTitle != null) tvZramTitle.setText(FormatUtils.formatBytes(zramUsedKB * 1024L));
+            if (pbZram != null) { pbZram.setProgress(zramPct); pbZram.setProgressTintList(getProgressColor(zramPct)); }
             StringBuilder zramInfo = new StringBuilder();
             zramInfo.append("原始 ").append(FormatUtils.formatBytes(zramOrigKB * 1024L));
-            if (zramCompKB > 0) {
-                zramInfo.append(" | 压缩 ").append(FormatUtils.formatBytes(zramCompKB * 1024L));
-            }
-            if (compRatio > 0) {
-                zramInfo.append(" | 比 ").append(String.format("%.1f:1", compRatio));
-            }
+            if (zramCompKB > 0) zramInfo.append(" | 压缩 ").append(FormatUtils.formatBytes(zramCompKB * 1024L));
+            if (compRatio > 0) zramInfo.append(" | 比 ").append(String.format("%.1f:1", compRatio));
             if (tvZramDetail != null) tvZramDetail.setText(zramInfo.toString());
         } else {
             if (tvZramTitle != null) tvZramTitle.setText("无 ZRAM");
@@ -192,16 +140,9 @@ public class MemoryFragment extends Fragment {
         long swapUsedKB = mem.getSwapUsedKB();
         if (swapTotalKB > 0) {
             int swapPct = (int) ((float) swapUsedKB / swapTotalKB * 100);
-            if (tvSwapTitle != null) {
-                tvSwapTitle.setText(FormatUtils.formatBytes(swapUsedKB * 1024L));
-            }
-            if (pbSwap != null) {
-                pbSwap.setProgress(swapPct);
-                pbSwap.setProgressTintList(getProgressColor(swapPct));
-            }
-            if (tvSwapDetail != null) {
-                tvSwapDetail.setText("总量 " + FormatUtils.formatBytes(swapTotalKB * 1024L));
-            }
+            if (tvSwapTitle != null) tvSwapTitle.setText(FormatUtils.formatBytes(swapUsedKB * 1024L));
+            if (pbSwap != null) { pbSwap.setProgress(swapPct); pbSwap.setProgressTintList(getProgressColor(swapPct)); }
+            if (tvSwapDetail != null) tvSwapDetail.setText("总量 " + FormatUtils.formatBytes(swapTotalKB * 1024L));
         } else {
             if (tvSwapTitle != null) tvSwapTitle.setText("无 Swap");
             if (pbSwap != null) pbSwap.setProgress(0);
@@ -213,17 +154,11 @@ public class MemoryFragment extends Fragment {
         if (repo == null) return;
         MemoryInfo mem = repo.getMemoryLiveData().getValue();
         if (mem == null || mem.getTotalKB() <= 0) return;
-
         long now = System.currentTimeMillis();
         float availGB = mem.getAvailableKB() * 1024f / (1024f * 1024f * 1024f);
         float usedGB = mem.getUsedKB() * 1024f / (1024f * 1024f * 1024f);
-
-        if (chartMemAvailable != null) {
-            chartMemAvailable.addDataPoint(now, availGB);
-        }
-        if (chartMemUsed != null) {
-            chartMemUsed.addDataPoint(now, usedGB);
-        }
+        if (chartMemAvailable != null) chartMemAvailable.addDataPoint(now, availGB);
+        if (chartMemUsed != null) chartMemUsed.addDataPoint(now, usedGB);
     }
 
     private ColorStateList getProgressColor(int pct) {
