@@ -47,9 +47,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_step3a);
         viewPager = findViewById(R.id.view_pager);
         tabLayout = findViewById(R.id.tab_layout);
-        viewPager.setAdapter(new SafePagerAdapter(this));
+        viewPager.setAdapter(new TabPagerAdapter(this));
         for (int i = 0; i < 5; i++)
-            tabLayout.addTab(tabLayout.newTab().setText(SafePagerAdapter.getTabTitle(i)));
+            tabLayout.addTab(tabLayout.newTab().setText(TabPagerAdapter.getTabTitle(i)));
         final boolean[] s = {false};
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override public void onTabSelected(TabLayout.Tab t) {
