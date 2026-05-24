@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private TabLayout tabLayout;
 
     // 🔧 逐级加回功能: 1=+repo 2=+Toolbar 3=+permissions 4=完整
-    private static final int LEVEL = 2;
+    private static final int LEVEL = 3;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
