@@ -17,7 +17,6 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/app_bar_bg_dark"
-            app:popupTheme="@style/ThemeOverlay.Material3.Dark"
             app:title="System Monitor"
             app:titleTextColor="@color/text_on_dark" />
 
@@ -28,14 +27,10 @@
             android:background="@color/app_bar_bg_dark"
             app:tabIndicatorColor="@color/cpu_color"
             app:tabIndicatorHeight="3dp"
-            app:tabIndicatorFullWidth="false"
-            app:tabIndicatorGravity="bottom"
-            app:tabSelectedTextColor="@color/cpu_color"
-            app:tabTextColor="@color/text_on_dark_secondary"
             app:tabMode="fixed"
             app:tabGravity="fill"
-            app:tabRippleColor="@android:color/transparent"
-            app:tabTextAppearance="@style/TabTextAppearance" />
+            app:tabSelectedTextColor="@color/cpu_color"
+            app:tabTextColor="@color/text_on_dark_secondary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
