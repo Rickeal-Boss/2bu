@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
     // 🔧 诊断模式：true = 最简布局
     private static final boolean DIAG_MINIMAL = true;
     // 🔧 诊断步骤：1=Toolbar 2=+TabLayout 3=+ViewPager 4=完整
-    private static final int DIAG_STEP = 39;
+    private static final int DIAG_STEP = 40;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -151,6 +151,31 @@ public class MainActivity extends AppCompatActivity {
                     });
                     viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
                         @Override public void onPageSelected(int pos) { /* no-op */ }
+                    });
+                    break;
+                case 40:
+                    // 防递归守卫版
+                    setContentView(R.layout.activity_step3a);
+                    viewPager = findViewById(R.id.view_pager);
+                    tabLayout = findViewById(R.id.tab_layout);
+                    viewPager.setAdapter(new SafePagerAdapter(this));
+                    for (int i = 0; i < 5; i++)
+                        tabLayout.addTab(tabLayout.newTab().setText(SafePagerAdapter.getTabTitle(i)));
+                    final boolean[] syncing = {false};
+                    tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                        @Override public void onTabSelected(TabLayout.Tab t) {
+                            if (!syncing[0]) { syncing[0] = true; viewPager.setCurrentItem(t.getPosition(), false); syncing[0] = false; }
+                        }
+                        @Override public void onTabUnselected(TabLayout.Tab t) {}
+                        @Override public void onTabReselected(TabLayout.Tab t) {}
+                    });
+                    viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+                        @Override public void onPageSelected(int pos) {
+                            if (!syncing[0]) {
+                                TabLayout.Tab t = tabLayout.getTabAt(pos);
+                                if (t != null && !t.isSelected()) t.select();
+                            }
+                        }
                     });
                     break;
                 default: setContentView(R.layout.activity_minimal); break;
