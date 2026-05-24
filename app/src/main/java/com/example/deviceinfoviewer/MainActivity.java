@@ -33,8 +33,8 @@ public class MainActivity extends AppCompatActivity {
     private ViewPager2 viewPager;
     private TabLayout tabLayout;
 
-    // 🔧 逐级加回功能: 1=+repo 2=+Toolbar 3=+permissions 4=完整
-    private static final int LEVEL = 3;
+    // 🔧 逐级加回: 1=repo 2=Toolbar+menu 3=permissions 4=完整
+    private static final int LEVEL = 4;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -44,16 +44,33 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
             getWindow().setDecorFitsSystemWindows(false);
 
-        setContentView(R.layout.activity_step3a);
+        // 使用正式布局
+        setContentView(R.layout.activity_main);
+
+        if (LEVEL >= 2) {
+            Toolbar toolbar = findViewById(R.id.toolbar);
+            setSupportActionBar(toolbar);
+            if (getSupportActionBar() != null) getSupportActionBar().setTitle("System Monitor");
+            ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
+                int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+                v.setPadding(0, top, 0, 0);
+                return insets;
+            });
+        }
+
         viewPager = findViewById(R.id.view_pager);
         tabLayout = findViewById(R.id.tab_layout);
+        viewPager.setOffscreenPageLimit(0);
         viewPager.setAdapter(new TabPagerAdapter(this));
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < TabPagerAdapter.TAB_COUNT; i++)
             tabLayout.addTab(tabLayout.newTab().setText(TabPagerAdapter.getTabTitle(i)));
         final boolean[] s = {false};
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override public void onTabSelected(TabLayout.Tab t) {
                 if (!s[0]) { s[0] = true; viewPager.setCurrentItem(t.getPosition(), false); s[0] = false; }
+                int c = TabPagerAdapter.getTabColor(t.getPosition());
+                tabLayout.setSelectedTabIndicatorColor(c);
+                tabLayout.setTabTextColors(ContextCompat.getColor(MainActivity.this, R.color.text_on_dark_secondary), c);
             }
             @Override public void onTabUnselected(TabLayout.Tab t) {}
             @Override public void onTabReselected(TabLayout.Tab t) {}
@@ -63,31 +80,61 @@ public class MainActivity extends AppCompatActivity {
                 if (!s[0]) { TabLayout.Tab t = tabLayout.getTabAt(pos); if (t != null && !t.isSelected()) t.select(); }
             }
         });
+        TabLayout.Tab first = tabLayout.getTabAt(0);
+        if (first != null) first.select();
 
-        // 🔧 逐级测试
         if (LEVEL >= 1) {
             repository = DeviceApplication.getDeviceRepository();
             if (repository != null) { repository.startMonitoring(settings.getRefreshIntervalMs()); repository.loadStaticData(); }
-            Log.i(TAG, "LEVEL 1: repo ok");
-        }
-        if (LEVEL >= 2) {
-            setContentView(R.layout.activity_main); // 用正式布局替代
-            // Toolbar setup (简化的，先验证布局能否加载)
-            Log.i(TAG, "LEVEL 2: activity_main layout ok");
         }
         if (LEVEL >= 3) {
             PermissionHelper.requestPermissionsSequential(this, new PermissionHelper.PermissionCallback() {
-                @Override public void onAllGranted() {}
-                @Override public void onDenied() {}
+                @Override public void onAllGranted() {} @Override public void onDenied() {}
             });
-            Log.i(TAG, "LEVEL 3: permissions ok");
         }
+        Log.i(TAG, "LEVEL " + LEVEL + " init OK");
     }
 
     public DeviceRepository getRepository() { return repository; }
-    @Override public boolean onCreateOptionsMenu(Menu menu) { getMenuInflater().inflate(R.menu.main_menu, menu); return true; }
-    @Override public boolean onOptionsItemSelected(@NonNull MenuItem item) { return super.onOptionsItemSelected(item); }
-    private void applyDarkMode() { AppCompatDelegate.setDefaultNightMode(settings.isDarkMode() ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO); }
-    @Override protected void onDestroy() { if (repository != null) repository.stopMonitoring(); }
+
+    @Override public boolean onCreateOptionsMenu(Menu menu) {
+        if (LEVEL >= 2) { getMenuInflater().inflate(R.menu.main_menu, menu); return true; }
+        return false;
+    }
+
+    @Override public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (LEVEL < 4) return super.onOptionsItemSelected(item);
+        int id = item.getItemId();
+        if (id == R.id.action_dark_mode) {
+            boolean isDark = !settings.isDarkMode(); settings.setDarkMode(isDark);
+            applyDarkMode();
+            Toast.makeText(this, isDark ? "深色模式" : "浅色模式", Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.action_export) {
+            String t = ExportHelper.exportToText(repository);
+            ExportHelper.shareReport(this, t, getString(R.string.export_text_title));
+        } else if (id == R.id.action_floating_window) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "请授予悬浮窗权限", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION));
+            } else {
+                boolean e = settings.isFloatingWindowEnabled();
+                if (e) { stopService(new Intent(this, FloatingWindowService.class)); settings.setFloatingWindowEnabled(false); }
+                else { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(new Intent(this, FloatingWindowService.class));
+                       else startService(new Intent(this, FloatingWindowService.class));
+                       settings.setFloatingWindowEnabled(true); }
+            }
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void applyDarkMode() {
+        AppCompatDelegate.setDefaultNightMode(settings.isDarkMode() ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
+    }
+
+    @Override protected void onDestroy() {
+        super.onDestroy();
+        if (repository != null) repository.stopMonitoring();
+        stopService(new Intent(this, FloatingWindowService.class));
+    }
     @Override public void onRequestPermissionsResult(int rq, @NonNull String[] p, @NonNull int[] g) { super.onRequestPermissionsResult(rq, p, g); }
 }
