@@ -25,12 +25,6 @@ import com.example.deviceinfoviewer.util.ExportHelper;
 import com.example.deviceinfoviewer.util.PermissionHelper;
 import com.google.android.material.tabs.TabLayout;
 
-/**
- * 主 Activity — DevCheck Pro 风格深色主题
- *
- * 关键修复：使用防递归守卫手动绑定 TabLayout ↔ ViewPager2，
- * 替代会触发互递归死循环的 TabLayoutMediator。
- */
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
@@ -42,229 +36,38 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i(TAG, "onCreate start, SDK=" + Build.VERSION.SDK_INT);
-
         settings = AppSettings.getInstance(this);
         applyDarkMode();
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
             getWindow().setDecorFitsSystemWindows(false);
-        }
 
-        // 🔧 快速诊断：true=用已验证的 step3a 布局+手动绑定，只换 adapter
-        final boolean DIAG_REAL_FRAG = true;
-        if (DIAG_REAL_FRAG) {
-            setContentView(R.layout.activity_step3a);
-            viewPager = findViewById(R.id.view_pager);
-            tabLayout = findViewById(R.id.tab_layout);
-            viewPager.setOffscreenPageLimit(0);
-            viewPager.setAdapter(new SafePagerAdapter(this));
-            // 手动绑定 — 完全等同于 step 40 工作版
-            for (int i = 0; i < 5; i++)
-                tabLayout.addTab(tabLayout.newTab().setText(SafePagerAdapter.getTabTitle(i)));
-            final boolean[] s = {false};
-            tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-                @Override public void onTabSelected(TabLayout.Tab t) {
-                    if (!s[0]) { s[0] = true; viewPager.setCurrentItem(t.getPosition(), false); s[0] = false; }
-                }
-                @Override public void onTabUnselected(TabLayout.Tab t) {}
-                @Override public void onTabReselected(TabLayout.Tab t) {}
-            });
-            viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-                @Override public void onPageSelected(int pos) {
-                    if (!s[0]) { TabLayout.Tab t = tabLayout.getTabAt(pos); if (t != null && !t.isSelected()) t.select(); }
-                }
-            });
-            repository = DeviceApplication.getDeviceRepository();
-            if (repository != null) {
-                repository.startMonitoring(settings.getRefreshIntervalMs());
-                repository.loadStaticData();
-            }
-            Log.i(TAG, "diag: real frags + step3a layout, result=" + (viewPager != null ? "loaded" : "null"));
-            return;
-        }
-
-        setContentView(R.layout.activity_main);
-
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("System Monitor");
-        }
-
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
-            int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-            v.setPadding(0, top, 0, 0);
-            return insets;
-        });
-
+        // === 已验证的 step 40 工作代码 ===
+        setContentView(R.layout.activity_step3a);
         viewPager = findViewById(R.id.view_pager);
         tabLayout = findViewById(R.id.tab_layout);
-
-        // ViewPager2 — offscreenPageLimit=0，启动时只创建 1 个 Fragment
-        TabPagerAdapter adapter = new TabPagerAdapter(this);
-        viewPager.setOffscreenPageLimit(0);
-        viewPager.setAdapter(adapter);
-
-        // 手动绑定 TabLayout ↔ ViewPager2（防递归守卫）
-        connectTabWithViewPager(adapter);
-
-        // 初始化 Repository
-        repository = DeviceApplication.getDeviceRepository();
-        if (repository != null) {
-            repository.startMonitoring(settings.getRefreshIntervalMs());
-            repository.loadStaticData();
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PermissionHelper.requestPermissionsSequential(this, new PermissionHelper.PermissionCallback() {
-                @Override public void onAllGranted() { }
-                @Override public void onDenied() { }
-            });
-        }
-        Log.i(TAG, "onCreate done");
-    }
-
-    /**
-     * 手动绑定 TabLayout ↔ ViewPager2，使用防递归守卫打破互递归死循环。
-     * 替代会触发崩溃的 TabLayoutMediator.attach()。
-     */
-    private void connectTabWithViewPager(TabPagerAdapter adapter) {
-        if (adapter == null) adapter = new TabPagerAdapter(this);
-        int count = adapter.getItemCount();
-        for (int i = 0; i < count; i++) {
-            tabLayout.addTab(tabLayout.newTab().setText(TabPagerAdapter.getTabTitle(i)));
-        }
-
-        // 防递归守卫（避免 select() ↔ setCurrentItem() 互递归）
-        final boolean[] syncing = {false};
-
+        viewPager.setAdapter(new SafePagerAdapter(this));
+        for (int i = 0; i < 5; i++)
+            tabLayout.addTab(tabLayout.newTab().setText(SafePagerAdapter.getTabTitle(i)));
+        final boolean[] s = {false};
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                if (!syncing[0]) {
-                    syncing[0] = true;
-                    viewPager.setCurrentItem(tab.getPosition(), false);
-                    syncing[0] = false;
-                }
-                // 更新指示器颜色
-                int color = TabPagerAdapter.getTabColor(tab.getPosition());
-                tabLayout.setSelectedTabIndicatorColor(color);
-                tabLayout.setTabTextColors(
-                        ContextCompat.getColor(MainActivity.this, R.color.text_on_dark_secondary),
-                        color);
+            @Override public void onTabSelected(TabLayout.Tab t) {
+                if (!s[0]) { s[0] = true; viewPager.setCurrentItem(t.getPosition(), false); s[0] = false; }
             }
-            @Override public void onTabUnselected(TabLayout.Tab tab) {}
-            @Override public void onTabReselected(TabLayout.Tab tab) {}
+            @Override public void onTabUnselected(TabLayout.Tab t) {}
+            @Override public void onTabReselected(TabLayout.Tab t) {}
         });
-
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageSelected(int pos) {
-                if (!syncing[0]) {
-                    TabLayout.Tab t = tabLayout.getTabAt(pos);
-                    if (t != null && !t.isSelected()) t.select();
-                }
+            @Override public void onPageSelected(int pos) {
+                if (!s[0]) { TabLayout.Tab t = tabLayout.getTabAt(pos); if (t != null && !t.isSelected()) t.select(); }
             }
         });
-
-        // 初始选中第一项
-        TabLayout.Tab first = tabLayout.getTabAt(0);
-        if (first != null) first.select();
+        Log.i(TAG, "bare step40 clone — running");
     }
 
-    public DeviceRepository getRepository() {
-        return repository;
-    }
-
-    @Override public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main_menu, menu);
-        return true;
-    }
-
-    @Override public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_dark_mode) {
-            boolean isDark = !settings.isDarkMode();
-            settings.setDarkMode(isDark);
-            applyDarkMode();
-            Toast.makeText(this, isDark ? "深色模式已开启" : "浅色模式已开启", Toast.LENGTH_SHORT).show();
-            return true;
-        }
-        if (id == R.id.action_export) {
-            String text = ExportHelper.exportToText(repository);
-            ExportHelper.shareReport(this, text, getString(R.string.export_text_title));
-            return true;
-        }
-        if (id == R.id.action_floating_window) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-                Toast.makeText(this, "请先授予悬浮窗权限", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION));
-                return true;
-            }
-            boolean enabled = settings.isFloatingWindowEnabled();
-            if (enabled) { stopFloatingWindow(); settings.setFloatingWindowEnabled(false);
-                Toast.makeText(this, "悬浮窗已关闭", Toast.LENGTH_SHORT).show(); }
-            else { startFloatingWindow(); settings.setFloatingWindowEnabled(true);
-                Toast.makeText(this, "悬浮窗已开启", Toast.LENGTH_SHORT).show(); }
-            return true;
-        }
-        if (id == R.id.action_settings) { showMainSettingsDialog(); return true; }
-        return super.onOptionsItemSelected(item);
-    }
-
-    private void applyDarkMode() {
-        AppCompatDelegate.setDefaultNightMode(
-                settings.isDarkMode() ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
-    }
-
-    private void startFloatingWindow() {
-        Intent intent = new Intent(this, FloatingWindowService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent);
-        else startService(intent);
-    }
-
-    private void stopFloatingWindow() {
-        stopService(new Intent(this, FloatingWindowService.class));
-    }
-
-    private void showMainSettingsDialog() {
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("设置")
-                .setItems(new String[]{"刷新间隔: " + (settings.getRefreshIntervalMs() / 1000) + "秒", "清空历史数据"},
-                        (dialog, which) -> {
-                            if (which == 0) showIntervalDialog();
-                            else if (which == 1) {
-                                if (repository != null) repository.getHistoryCache().clear();
-                                Toast.makeText(this, "历史数据已清空", Toast.LENGTH_SHORT).show();
-                            }
-                        })
-                .setNegativeButton("关闭", null).show();
-    }
-
-    private void showIntervalDialog() {
-        final String[] intervals = {"1秒", "2秒", "3秒", "5秒", "10秒"};
-        final int[] values = {1000, 2000, 3000, 5000, 10000};
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("选择刷新间隔")
-                .setItems(intervals, (dialog, which) -> {
-                    int ms = values[which];
-                    settings.setRefreshIntervalMs(ms);
-                    if (repository != null) repository.setIntervalMs(ms);
-                    Toast.makeText(this, "刷新间隔设为 " + (ms / 1000) + "秒", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("取消", null).show();
-    }
-
-    @Override protected void onDestroy() {
-        super.onDestroy();
-        if (repository != null) repository.stopMonitoring();
-        stopFloatingWindow();
-    }
-
-    @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                                     @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        PermissionHelper.onPermissionResult(requestCode, permissions, grantResults);
-    }
+    public DeviceRepository getRepository() { return repository; }
+    @Override public boolean onCreateOptionsMenu(Menu menu) { getMenuInflater().inflate(R.menu.main_menu, menu); return true; }
+    @Override public boolean onOptionsItemSelected(@NonNull MenuItem item) { return super.onOptionsItemSelected(item); }
+    private void applyDarkMode() { AppCompatDelegate.setDefaultNightMode(settings.isDarkMode() ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO); }
+    @Override protected void onDestroy() { super.onDestroy(); }
+    @Override public void onRequestPermissionsResult(int rq, @NonNull String[] p, @NonNull int[] g) { super.onRequestPermissionsResult(rq, p, g); }
 }
