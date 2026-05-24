@@ -38,9 +38,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        // 🔑 setDefaultNightMode 必须在 super.onCreate() 之前调用
         settings = AppSettings.getInstance(this);
-        applyDarkMode();
+        AppCompatDelegate.setDefaultNightMode(
+                settings.isDarkMode() ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
+
+        super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
             getWindow().setDecorFitsSystemWindows(false);
 
@@ -110,8 +113,8 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
         if (id == R.id.action_dark_mode) {
             boolean isDark = !settings.isDarkMode(); settings.setDarkMode(isDark);
-            applyDarkMode();
-            Toast.makeText(this, isDark ? "深色模式" : "浅色模式", Toast.LENGTH_SHORT).show();
+            AppCompatDelegate.setDefaultNightMode(isDark ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
+            recreate();
         } else if (id == R.id.action_export) {
             String t = ExportHelper.exportToText(repository);
             ExportHelper.shareReport(this, t, getString(R.string.export_text_title));
