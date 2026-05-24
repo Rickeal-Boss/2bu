@@ -44,8 +44,8 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
             getWindow().setDecorFitsSystemWindows(false);
 
-        // 使用正式布局
-        setContentView(R.layout.activity_main);
+        // 先用 step3a 布局测试，排除布局问题
+        setContentView(R.layout.activity_step3a);
 
         if (LEVEL >= 2) {
             Toolbar toolbar = findViewById(R.id.toolbar);
@@ -80,8 +80,11 @@ public class MainActivity extends AppCompatActivity {
                 if (!s[0]) { TabLayout.Tab t = tabLayout.getTabAt(pos); if (t != null && !t.isSelected()) t.select(); }
             }
         });
-        TabLayout.Tab first = tabLayout.getTabAt(0);
-        if (first != null) first.select();
+        // 延迟初始选中，避免 Fragment 事务在 onCreate 中崩溃
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            TabLayout.Tab first = tabLayout.getTabAt(0);
+            if (first != null && !first.isSelected()) first.select();
+        });
 
         if (LEVEL >= 1) {
             repository = DeviceApplication.getDeviceRepository();
