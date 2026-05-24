@@ -51,6 +51,24 @@ public class MainActivity extends AppCompatActivity {
             getWindow().setDecorFitsSystemWindows(false);
         }
 
+        // 🔧 快速诊断：true=用已验证的 step3a 布局+手动绑定，只换 adapter
+        final boolean DIAG_REAL_FRAG = true;
+        if (DIAG_REAL_FRAG) {
+            setContentView(R.layout.activity_step3a);
+            viewPager = findViewById(R.id.view_pager);
+            tabLayout = findViewById(R.id.tab_layout);
+            viewPager.setOffscreenPageLimit(0);
+            viewPager.setAdapter(new TabPagerAdapter(this));
+            connectTabWithViewPager(null);
+            repository = DeviceApplication.getDeviceRepository();
+            if (repository != null) {
+                repository.startMonitoring(settings.getRefreshIntervalMs());
+                repository.loadStaticData();
+            }
+            Log.i(TAG, "diag: real frags + step3a layout, result=" + (viewPager != null ? "loaded" : "null"));
+            return;
+        }
+
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -97,8 +115,9 @@ public class MainActivity extends AppCompatActivity {
      * 替代会触发崩溃的 TabLayoutMediator.attach()。
      */
     private void connectTabWithViewPager(TabPagerAdapter adapter) {
-        // 添加 Tab
-        for (int i = 0; i < adapter.getItemCount(); i++) {
+        if (adapter == null) adapter = new TabPagerAdapter(this);
+        int count = adapter.getItemCount();
+        for (int i = 0; i < count; i++) {
             tabLayout.addTab(tabLayout.newTab().setText(TabPagerAdapter.getTabTitle(i)));
         }
 
