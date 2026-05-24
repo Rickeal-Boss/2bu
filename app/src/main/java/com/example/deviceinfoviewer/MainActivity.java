@@ -58,8 +58,23 @@ public class MainActivity extends AppCompatActivity {
             viewPager = findViewById(R.id.view_pager);
             tabLayout = findViewById(R.id.tab_layout);
             viewPager.setOffscreenPageLimit(0);
-            viewPager.setAdapter(new TabPagerAdapter(this));
-            connectTabWithViewPager(null);
+            viewPager.setAdapter(new SafePagerAdapter(this));
+            // 手动绑定 — 完全等同于 step 40 工作版
+            for (int i = 0; i < 5; i++)
+                tabLayout.addTab(tabLayout.newTab().setText(SafePagerAdapter.getTabTitle(i)));
+            final boolean[] s = {false};
+            tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                @Override public void onTabSelected(TabLayout.Tab t) {
+                    if (!s[0]) { s[0] = true; viewPager.setCurrentItem(t.getPosition(), false); s[0] = false; }
+                }
+                @Override public void onTabUnselected(TabLayout.Tab t) {}
+                @Override public void onTabReselected(TabLayout.Tab t) {}
+            });
+            viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+                @Override public void onPageSelected(int pos) {
+                    if (!s[0]) { TabLayout.Tab t = tabLayout.getTabAt(pos); if (t != null && !t.isSelected()) t.select(); }
+                }
+            });
             repository = DeviceApplication.getDeviceRepository();
             if (repository != null) {
                 repository.startMonitoring(settings.getRefreshIntervalMs());
