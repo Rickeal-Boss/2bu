@@ -3,7 +3,7 @@ package com.example.deviceinfoviewer;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.ViewPager2;
+import androidx.viewpager2.widget.ViewPager2;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
