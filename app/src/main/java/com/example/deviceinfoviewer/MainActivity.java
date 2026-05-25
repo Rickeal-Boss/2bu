@@ -12,12 +12,14 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.deviceinfoviewer.data.repository.DeviceRepository;
+import com.example.deviceinfoviewer.util.PermissionHelper;
 import com.google.android.material.tabs.TabLayout;
 
 public class MainActivity extends AppCompatActivity {
 
-    // 🔧 STEP: 1=activity_main  2=+Toolbar  3=+TabPagerAdapter  4=+repo  5=+perm/menu
-    private static final int STEP = 3;
+    // 🔧 STEP: 4=+repo  5=+perm
+    private static final int STEP = 5;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -69,6 +71,19 @@ public class MainActivity extends AppCompatActivity {
                 if (!s[0]) { TabLayout.Tab t = tl.getTabAt(pos); if (t != null && !t.isSelected()) t.select(); }
             }
         });
+
+        // Repository
+        if (STEP >= 4) {
+            DeviceRepository repo = DeviceApplication.getDeviceRepository();
+            if (repo != null) { repo.startMonitoring(2000); repo.loadStaticData(); }
+        }
+
+        // Permissions
+        if (STEP >= 5 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PermissionHelper.requestPermissionsSequential(this, new PermissionHelper.PermissionCallback() {
+                @Override public void onAllGranted() {} @Override public void onDenied() {}
+            });
+        }
 
         Log.i("Main", "STEP " + STEP + " OK");
     }
