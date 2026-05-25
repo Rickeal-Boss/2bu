@@ -221,7 +221,7 @@ public class CpuFragment extends Fragment {
                     ratio = Math.min(ratio, 1.0f);
                     int maxW = perCoreView.getWidth() - dpToPx(160);
                     if (maxW <= 0) maxW = dpToPx(200);
-                    LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) barFill.getLayoutParams();
+                    android.view.ViewGroup.LayoutParams lp = barFill.getLayoutParams();
                     lp.width = (int) (maxW * ratio);
                     barFill.setLayoutParams(lp);
                     barFill.setBackgroundColor(getFreqColor(core.getCurrentFreqKHz()));
