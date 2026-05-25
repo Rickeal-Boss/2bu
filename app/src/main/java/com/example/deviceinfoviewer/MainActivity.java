@@ -37,9 +37,10 @@ public class MainActivity extends AppCompatActivity {
 
         ViewPager2 vp = findViewById(R.id.view_pager);
         TabLayout tl = findViewById(R.id.tab_layout);
-        vp.setAdapter(new SafePagerAdapter(this));
-        for (int i = 0; i < 5; i++)
-            tl.addTab(tl.newTab().setText(SafePagerAdapter.getTabTitle(i)));
+        vp.setOffscreenPageLimit(0);
+        vp.setAdapter(new TabPagerAdapter(this));
+        for (int i = 0; i < TabPagerAdapter.TAB_COUNT; i++)
+            tl.addTab(tl.newTab().setText(TabPagerAdapter.getTabTitle(i)));
         final boolean[] s = {false};
         tl.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override public void onTabSelected(TabLayout.Tab t) {
