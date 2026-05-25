@@ -7,6 +7,9 @@ import androidx.viewpager2.widget.ViewPager2;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.tabs.TabLayout;
 
@@ -21,7 +24,17 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
             getWindow().setDecorFitsSystemWindows(false);
 
-        setContentView(R.layout.activity_step3a);
+        setContentView(R.layout.activity_main);
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) getSupportActionBar().setTitle("System Monitor");
+        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
+            int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+            v.setPadding(0, top, 0, 0);
+            return insets;
+        });
+
         ViewPager2 vp = findViewById(R.id.view_pager);
         TabLayout tl = findViewById(R.id.tab_layout);
         vp.setAdapter(new SafePagerAdapter(this));
