@@ -18,7 +18,7 @@ import com.example.deviceinfoviewer.fragment.SafePlaceholderFragment;
  */
 public class TabPagerAdapter extends FragmentStateAdapter {
 
-    private static final int DIAG_LEVEL = 1;
+    private static final int DIAG_LEVEL = 5;
 
     public static final int TAB_COUNT = 5;
     private static final String[] TAB_TITLES = {"CPU", "GPU", "内存", "电池", "网络"};
