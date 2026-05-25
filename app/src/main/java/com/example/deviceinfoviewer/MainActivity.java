@@ -11,6 +11,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.deviceinfoviewer.data.repository.DeviceRepository;
 import com.google.android.material.tabs.TabLayout;
 
 public class MainActivity extends AppCompatActivity {
@@ -53,5 +54,10 @@ public class MainActivity extends AppCompatActivity {
                 if (!s[0]) { TabLayout.Tab t = tl.getTabAt(pos); if (t != null && !t.isSelected()) t.select(); }
             }
         });
+
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            DeviceRepository repo = DeviceApplication.getDeviceRepository();
+            if (repo != null) { repo.startMonitoring(2000); repo.loadStaticData(); }
+        }, 500);
     }
 }
