@@ -19,7 +19,7 @@ import com.google.android.material.tabs.TabLayout;
 public class MainActivity extends AppCompatActivity {
 
     // 🔧 STEP: 4=+repo  5=+perm
-    private static final int STEP = 4;
+    private static final int STEP = 5;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
         ViewPager2 vp = findViewById(R.id.view_pager);
         TabLayout tl = findViewById(R.id.tab_layout);
+        vp.setOffscreenPageLimit(0);
 
         // Adapter
         if (STEP >= 3) vp.setAdapter(new TabPagerAdapter(this));
