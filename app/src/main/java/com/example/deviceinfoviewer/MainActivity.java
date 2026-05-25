@@ -72,10 +72,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Repository
+        // Repository — 延迟启动，避免在 Fragment 未就绪时推送数据
         if (STEP >= 4) {
-            DeviceRepository repo = DeviceApplication.getDeviceRepository();
-            if (repo != null) { repo.startMonitoring(2000); repo.loadStaticData(); }
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                DeviceRepository repo = DeviceApplication.getDeviceRepository();
+                if (repo != null) { repo.startMonitoring(2000); repo.loadStaticData(); }
+                Log.i("Main", "repo started");
+            }, 500);
         }
 
         // Permissions
