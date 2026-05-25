@@ -19,7 +19,7 @@ import com.google.android.material.tabs.TabLayout;
 public class MainActivity extends AppCompatActivity {
 
     // 🔧 STEP: 4=+repo  5=+perm
-    private static final int STEP = 5;
+    private static final int STEP = 4;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
