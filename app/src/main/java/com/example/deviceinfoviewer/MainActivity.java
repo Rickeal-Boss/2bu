@@ -8,13 +8,16 @@ import androidx.viewpager2.widget.ViewPager2;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.tabs.TabLayout;
 
 public class MainActivity extends AppCompatActivity {
 
     // 🔧 STEP: 1=activity_main  2=+Toolbar  3=+TabPagerAdapter  4=+repo  5=+perm/menu
-    private static final int STEP = 1;
+    private static final int STEP = 3;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -28,6 +31,18 @@ public class MainActivity extends AppCompatActivity {
         // 布局
         if (STEP >= 1) setContentView(R.layout.activity_main);
         else setContentView(R.layout.activity_step3a);
+
+        // Toolbar
+        if (STEP >= 2) {
+            Toolbar toolbar = findViewById(R.id.toolbar);
+            setSupportActionBar(toolbar);
+            if (getSupportActionBar() != null) getSupportActionBar().setTitle("System Monitor");
+            ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
+                int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+                v.setPadding(0, top, 0, 0);
+                return insets;
+            });
+        }
 
         ViewPager2 vp = findViewById(R.id.view_pager);
         TabLayout tl = findViewById(R.id.tab_layout);
