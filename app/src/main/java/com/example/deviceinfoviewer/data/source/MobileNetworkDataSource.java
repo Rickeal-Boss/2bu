@@ -46,17 +46,19 @@ public class MobileNetworkDataSource {
 
         // 信号强度
         // API 29+: 使用 getCellSignalStrengths()（SignalStrength.getDbm() 在 API 31+ 已移除）
+        // 注意：catch Throwable 而非 Exception，OEM ROM 上可能抛 NoSuchMethodError
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             SignalStrength ss = tm.getSignalStrength();
             if (ss != null) {
                 try {
-                    int dbm = Integer.MAX_VALUE;
+                    int bestDbm = Integer.MIN_VALUE;
                     for (android.telephony.CellSignalStrength cs : ss.getCellSignalStrengths()) {
                         int d = cs.getDbm();
-                        if (d != Integer.MAX_VALUE && d > dbm) dbm = d;
+                        // dBm 是负数，保留最大值（信号最强）
+                        if (d > bestDbm) bestDbm = d;
                     }
-                    info.setSignalStrengthDbm(dbm != Integer.MAX_VALUE ? dbm : Integer.MIN_VALUE);
-                } catch (Exception e) {
+                    info.setSignalStrengthDbm(bestDbm != Integer.MIN_VALUE ? bestDbm : Integer.MIN_VALUE);
+                } catch (Throwable t) {
                     info.setSignalStrengthDbm(Integer.MIN_VALUE);
                 }
             }
@@ -69,7 +71,7 @@ public class MobileNetworkDataSource {
                     int dbm = (int) method.invoke(ss);
                     info.setSignalStrengthDbm(dbm);
                 }
-            } catch (Exception e) {
+            } catch (Throwable t) {
                 info.setSignalStrengthDbm(Integer.MIN_VALUE);
             }
         }
