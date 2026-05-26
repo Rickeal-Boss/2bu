@@ -281,39 +281,5 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- ===== 可见卫星 ===== -->
-        <TextView
-            android:text="可见卫星"
-            android:textColor="@color/text_on_dark"
-            android:textSize="14sp"
-            android:fontFamily="sans-serif-medium"
-            android:paddingStart="8dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="6dp" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_satellites"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            android:overScrollMode="never" />
-
-        <!-- ===== 网络接口 ===== -->
-        <TextView
-            android:text="网络接口"
-            android:textColor="@color/text_on_dark"
-            android:textSize="14sp"
-            android:fontFamily="sans-serif-medium"
-            android:paddingStart="8dp"
-            android:paddingTop="14dp"
-            android:paddingBottom="6dp" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_net_interfaces"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            android:overScrollMode="never" />
-
     </LinearLayout>
 </ScrollView>
