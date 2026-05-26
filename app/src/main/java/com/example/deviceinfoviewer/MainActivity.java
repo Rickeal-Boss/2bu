@@ -37,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         ViewPager2 vp = findViewById(R.id.view_pager);
-        vp.setOffscreenPageLimit(0);
         TabLayout tl = findViewById(R.id.tab_layout);
         vp.setAdapter(new TabPagerAdapter(this));
         for (int i = 0; i < TabPagerAdapter.TAB_COUNT; i++)

@@ -154,12 +154,12 @@ public class DeviceRepository {
         try {
             WifiDetailInfo wifiInfo = wifiDataSource.getWifiDetail();
             wifiLiveData.postValue(wifiInfo);
-        } catch (Throwable ignored) {}
+        } catch (Exception ignored) {}
 
         try {
             MobileNetworkInfo mobileInfo = mobileNetworkDataSource.getMobileNetworkInfo();
             mobileNetworkLiveData.postValue(mobileInfo);
-        } catch (Throwable ignored) {}
+        } catch (Exception ignored) {}
 
         try {
             List<NetworkInterfaceInfo> interfaces = networkInterfaceDataSource.getNetworkInterfaces();
