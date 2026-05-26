@@ -64,6 +64,11 @@ public class FloatingWindowService extends Service {
         super.onCreate();
         createNotificationChannel();
 
+        // Android 13+ 请求通知权限（前台服务必需）
+        if (Build.VERSION.SDK_INT >= 33) {
+            requestNotificationPermission();
+        }
+
         settings = AppSettings.getInstance(this);
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         repository = DeviceApplication.getDeviceRepository();
@@ -316,6 +321,20 @@ public class FloatingWindowService extends Service {
         }
         if (repository != null) {
             repository.stopMonitoring();
+        }
+    }
+
+    /**
+     * Android 13+ 运行时请求通知权限
+     */
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                // Service 中无法直接弹出权限对话框，记录日志等待主 Activity 处理
+                android.util.Log.w("FloatingWindowService",
+                        "POST_NOTIFICATIONS permission not granted; foreground notification may fail");
+            }
         }
     }
 

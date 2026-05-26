@@ -31,6 +31,15 @@ public class DeviceMonitorService extends Service {
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
+
+        // Android 13+ 请求通知权限（前台服务必需）
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                android.util.Log.w("DeviceMonitorService",
+                        "POST_NOTIFICATIONS permission not granted");
+            }
+        }
     }
 
     @Override

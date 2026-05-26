@@ -142,7 +142,7 @@ public class DashboardFragment extends Fragment {
             chartHistory.setData("CPU温度", repo.getHistoryCache().getSeries("cpu_temp"));
         }
 
-        cardRam.setOnClickListener(v -> showZramDialog());
+        if (cardRam != null) cardRam.setOnClickListener(v -> showZramDialog());
         swipeRefresh.setOnRefreshListener(() -> {
             swipeRefresh.setRefreshing(false);
             if (repo != null) { repo.loadStaticData(); updateChart(); }
@@ -154,6 +154,11 @@ public class DashboardFragment extends Fragment {
 
     @Override public void onResume() { super.onResume(); if (chartHandler != null && chartUpdater != null) chartHandler.post(chartUpdater); }
     @Override public void onPause() { super.onPause(); if (chartHandler != null && chartUpdater != null) chartHandler.removeCallbacks(chartUpdater); }
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        if (chartHandler != null) { chartHandler.removeCallbacksAndMessages(null); chartHandler = null; }
+        chartUpdater = null;
+    }
 
     private void updateChart() {
         if (repo == null || chartHistory == null) return;

@@ -65,8 +65,10 @@ public class HardwareFragment extends Fragment {
 
         // 传感器 RecyclerView
         sensorAdapter = new SensorListAdapter();
-        recyclerSensors.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerSensors.setAdapter(sensorAdapter);
+        if (recyclerSensors != null) {
+            recyclerSensors.setLayoutManager(new LinearLayoutManager(getContext()));
+            recyclerSensors.setAdapter(sensorAdapter);
+        }
 
         if (repo == null) {
             return;

@@ -44,14 +44,18 @@ public class MobileNetworkDataSource {
             info.setRoaming(tm.isNetworkRoaming());
         }
 
-        // 信号强度（通过反射或其他方式）
+        // 信号强度
+        // API 29+: 使用 getCellSignalStrengths()（SignalStrength.getDbm() 在 API 31+ 已移除）
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             SignalStrength ss = tm.getSignalStrength();
             if (ss != null) {
                 try {
-                    Method method = SignalStrength.class.getMethod("getDbm");
-                    int dbm = (int) method.invoke(ss);
-                    info.setSignalStrengthDbm(dbm);
+                    int dbm = Integer.MAX_VALUE;
+                    for (android.telephony.CellSignalStrength cs : ss.getCellSignalStrengths()) {
+                        int d = cs.getDbm();
+                        if (d != Integer.MAX_VALUE && d > dbm) dbm = d;
+                    }
+                    info.setSignalStrengthDbm(dbm != Integer.MAX_VALUE ? dbm : Integer.MIN_VALUE);
                 } catch (Exception e) {
                     info.setSignalStrengthDbm(Integer.MIN_VALUE);
                 }

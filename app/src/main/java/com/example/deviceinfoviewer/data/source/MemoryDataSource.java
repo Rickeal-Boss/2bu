@@ -76,9 +76,9 @@ public class MemoryDataSource {
                 }
             }
         }
-        // 压缩比
+        // 压缩比 (原始数据 / 压缩后 = X:1，值越大压缩效果越好)
         if (info.getZramOriginalKB() > 0 && info.getZramCompressedKB() > 0) {
-            info.setCompressionRatio((float) info.getZramCompressedKB() / info.getZramOriginalKB());
+            info.setCompressionRatio((float) info.getZramOriginalKB() / info.getZramCompressedKB());
         }
     }
 
