@@ -25,7 +25,6 @@
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:background="@color/app_bar_bg_dark"
-            app:tabTextAppearance="@style/TabTextAppearance"
             app:tabIndicatorColor="@color/cpu_color"
             app:tabIndicatorHeight="3dp"
             app:tabMode="fixed"
