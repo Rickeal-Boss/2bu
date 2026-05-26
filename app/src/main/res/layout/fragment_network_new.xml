@@ -23,12 +23,14 @@
             android:paddingStart="4dp"
             android:paddingBottom="8dp" />
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="14dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/card_bg_dark">
+            app:cardBackgroundColor="@color/card_bg_dark"
+            app:strokeColor="@color/card_stroke_dark"
+            app:strokeWidth="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -114,7 +116,7 @@
                 </LinearLayout>
 
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- ===== 移动网络 ===== -->
         <TextView
@@ -128,12 +130,14 @@
             android:paddingStart="4dp"
             android:paddingBottom="8dp" />
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="14dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/card_bg_dark">
+            app:cardBackgroundColor="@color/card_bg_dark"
+            app:strokeColor="@color/card_stroke_dark"
+            app:strokeWidth="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -253,7 +257,7 @@
                 </LinearLayout>
 
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- ===== GPS ===== -->
         <TextView
@@ -267,12 +271,14 @@
             android:paddingStart="4dp"
             android:paddingBottom="8dp" />
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="14dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/card_bg_dark">
+            app:cardBackgroundColor="@color/card_bg_dark"
+            app:strokeColor="@color/card_stroke_dark"
+            app:strokeWidth="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -348,7 +354,7 @@
                     android:textSize="13sp" />
 
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- ===== 卫星详情 ===== -->
         <TextView
